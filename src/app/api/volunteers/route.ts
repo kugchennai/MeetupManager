@@ -12,13 +12,43 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Return all volunteers (including those who have logged in and linked their accounts)
-  // Only return standalone volunteers (not linked to members)
-  // Members assigned to events as volunteers are tracked separately
-  const volunteers = await prisma.volunteer.findMany({
-    where: {
-      userId: null, // Exclude member-linked volunteers
+  // Primary source: users table (globalRole=VOLUNTEER) so logged-in volunteers always appear.
+  const volunteerUsers = await prisma.user.findMany({
+    where: { globalRole: "VOLUNTEER" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      createdAt: true,
+      updatedAt: true,
+      volunteerProfile: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          discordId: true,
+          role: true,
+          userId: true,
+          createdAt: true,
+          updatedAt: true,
+          events: {
+            select: {
+              status: true,
+              event: {
+                select: { id: true, title: true, date: true },
+              },
+            },
+          },
+        },
+      },
     },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Secondary source: unlinked volunteer rows (not yet logged in / not yet linked).
+  const unlinkedVolunteers = await prisma.volunteer.findMany({
+    where: { userId: null },
     include: {
       events: {
         select: {
@@ -28,19 +58,44 @@ export async function GET(req: Request) {
           },
         },
       },
-      user: {
-        select: { id: true, name: true, image: true },
-      },
     },
     orderBy: { name: "asc" },
   });
 
-  return NextResponse.json(
-    volunteers.map((v) => ({
-      ...v,
-      eventsCount: v.events.length,
-    }))
-  );
+  const normalizedFromUsers = volunteerUsers.map((u) => {
+    const profile = u.volunteerProfile;
+    const events = profile?.events ?? [];
+    return {
+      id: profile?.id ?? `user-${u.id}`,
+      name: profile?.name ?? u.name ?? u.email ?? "Unnamed Volunteer",
+      email: profile?.email ?? u.email,
+      discordId: profile?.discordId ?? null,
+      role: profile?.role ?? null,
+      userId: u.id,
+      user: { id: u.id, name: u.name, image: u.image },
+      createdAt: profile?.createdAt ?? u.createdAt,
+      updatedAt: profile?.updatedAt ?? u.updatedAt,
+      events,
+      eventsCount: events.length,
+    };
+  });
+
+  const normalizedUnlinked = unlinkedVolunteers.map((v) => ({
+    ...v,
+    eventsCount: v.events.length,
+  }));
+
+  // Merge and dedupe by volunteer row id (or fallback to email for synthetic user rows).
+  const byKey = new Map<string, (typeof normalizedFromUsers)[number] | (typeof normalizedUnlinked)[number]>();
+  for (const v of normalizedUnlinked) {
+    byKey.set(v.id, v);
+  }
+  for (const v of normalizedFromUsers) {
+    const key = v.id.startsWith("user-") ? `email:${(v.email ?? "").toLowerCase()}` : v.id;
+    byKey.set(key, v);
+  }
+
+  return NextResponse.json(Array.from(byKey.values()));
 }
 
 export async function POST(req: NextRequest) {
