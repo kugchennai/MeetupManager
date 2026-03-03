@@ -62,7 +62,50 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(event);
+  const venueRequestTemplateKeys = event.venuePartners.map((vp) => `venue_request:${vp.id}`);
+  const venueRequestLogs = venueRequestTemplateKeys.length
+    ? await prisma.emailLog.findMany({
+        where: {
+          template: { in: venueRequestTemplateKeys },
+          status: { in: ["PENDING", "SENT"] },
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          template: true,
+          status: true,
+          sentAt: true,
+          createdAt: true,
+          to: true,
+          subject: true,
+        },
+      })
+    : [];
+  const requestByTemplate = new Map<string, (typeof venueRequestLogs)[number]>();
+  for (const log of venueRequestLogs) {
+    if (!requestByTemplate.has(log.template)) {
+      requestByTemplate.set(log.template, log);
+    }
+  }
+
+  const eventWithVenueRequestState = {
+    ...event,
+    venuePartners: event.venuePartners.map((vp) => {
+      const request = requestByTemplate.get(`venue_request:${vp.id}`);
+      const gmailQuery = request
+        ? `to:${request.to} subject:"${request.subject}"`
+        : null;
+      return {
+        ...vp,
+        venueRequestSent: !!request,
+        venueRequestSentAt: request?.sentAt ?? request?.createdAt ?? null,
+        venueRequestGmailUrl: gmailQuery
+          ? `https://mail.google.com/mail/u/0/#search/${encodeURIComponent(gmailQuery)}`
+          : null,
+      };
+    }),
+  };
+
+  return NextResponse.json(eventWithVenueRequestState);
 }
 
 export async function PATCH(

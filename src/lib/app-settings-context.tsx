@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 interface AppSettingsContextValue {
   meetupName: string;
   setMeetupName: (name: string) => void;
+  meetupDescription: string;
   minVolunteerTasks: number;
   setMinVolunteerTasks: (n: number) => void;
   minEventDuration: number;
@@ -19,6 +20,7 @@ interface AppSettingsContextValue {
 const AppSettingsContext = createContext<AppSettingsContextValue>({
   meetupName: "Meetup Manager",
   setMeetupName: () => {},
+  meetupDescription: "",
   minVolunteerTasks: 7,
   setMinVolunteerTasks: () => {},
   minEventDuration: 4,
@@ -32,6 +34,7 @@ const AppSettingsContext = createContext<AppSettingsContextValue>({
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [meetupName, setMeetupName] = useState("Meetup Manager");
+  const [meetupDescription, setMeetupDescription] = useState("");
   const [minVolunteerTasks, setMinVolunteerTasks] = useState(7);
   const [minEventDuration, setMinEventDuration] = useState(4);
   const [logoLight, setLogoLight] = useState<string | null>(null);
@@ -42,8 +45,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     fetch("/api/settings")
       .then((r) => (r.ok ? r.json() : {}))
       .then((data: Record<string, string>) => {
-        if (data.meetup_name) {
-          setMeetupName(data.meetup_name);
+        if ("meetup_name" in data) {
+          setMeetupName(data.meetup_name || "Meetup Manager");
+        }
+        if ("meetup_description" in data) {
+          setMeetupDescription(data.meetup_description || "");
         }
         if (data.min_volunteer_tasks) {
           const parsed = parseInt(data.min_volunteer_tasks, 10);
@@ -85,6 +91,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       value={{
         meetupName,
         setMeetupName: updateMeetupName,
+        meetupDescription,
         minVolunteerTasks,
         setMinVolunteerTasks: updateMinVolunteerTasks,
         minEventDuration,

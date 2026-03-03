@@ -7,7 +7,7 @@ import {
 import {
   ArrowLeft, Calendar, MapPin, Mic2, Users, ClipboardCheck,
   Check, Pencil, Trash2, Plus, CalendarDays, UserPlus, X, Search,
-  ChevronDown, ChevronsUpDown, Building2, AlertTriangle, RefreshCw, ExternalLink, Link2,
+  ChevronDown, ChevronsUpDown, Building2, AlertTriangle, RefreshCw, ExternalLink, Link2, Mail, Send,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
@@ -54,6 +54,9 @@ interface EventDetail {
     cost: string | null;
     notes: string | null;
     confirmationDate: string | null;
+    venueRequestSent: boolean;
+    venueRequestSentAt: string | null;
+    venueRequestGmailUrl: string | null;
     venuePartner: { id: string; name: string; email: string | null; address: string | null; capacity: number | null; contactName: string | null; phone: string | null };
     owner: { id: string; name: string | null; image: string | null } | null;
   }[];
@@ -369,15 +372,21 @@ type VenuePartnerItem = EventDetail["venuePartners"][number];
 function VenuePartnerList({
   venuePartners,
   canEdit,
+  canConfirmVenue,
+  canSendVenueRequest,
   venueStatusUpdating,
   onStatusChange,
   onUnlink,
+  onOpenVenueRequest,
 }: {
   venuePartners: VenuePartnerItem[];
   canEdit: boolean;
+  canConfirmVenue: boolean;
+  canSendVenueRequest: boolean;
   venueStatusUpdating: string | null;
   onStatusChange: (linkId: string, status: string) => void;
   onUnlink: (venuePartnerId: string) => void;
+  onOpenVenueRequest: (venueLink: VenuePartnerItem) => void;
 }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -426,6 +435,11 @@ function VenuePartnerList({
                       Confirmed Venue
                     </span>
                   )}
+                  {evp.venueRequestSent && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-accent">
+                      Request Sent
+                    </span>
+                  )}
                   <ChevronDown
                     className={cn(
                       "h-3.5 w-3.5 text-muted transition-transform duration-200",
@@ -455,7 +469,13 @@ function VenuePartnerList({
                     className="bg-background border border-border rounded-lg px-2 py-1 text-xs outline-none focus:border-accent cursor-pointer"
                   >
                     {VENUE_STATUSES.map((s) => (
-                      <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>
+                      <option
+                        key={s}
+                        value={s}
+                        disabled={s === "CONFIRMED" && !canConfirmVenue}
+                      >
+                        {s.charAt(0) + s.slice(1).toLowerCase()}
+                      </option>
                     ))}
                   </select>
                 ) : (
@@ -526,6 +546,43 @@ function VenuePartnerList({
                     <div className="col-span-2">
                       <p className="text-[11px] uppercase tracking-wide text-muted font-medium">Notes</p>
                       <p className="text-foreground">{evp.notes}</p>
+                    </div>
+                  )}
+                  {canSendVenueRequest && (
+                    <div className="col-span-2 pt-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => onOpenVenueRequest(evp)}
+                        disabled={!evp.venuePartner.email || evp.venueRequestSent}
+                        title={
+                          evp.venueRequestSent
+                            ? "A venue request has already been sent for this event"
+                            : evp.venuePartner.email
+                              ? "Compose venue request email"
+                              : "Venue partner has no email"
+                        }
+                      >
+                        <Mail className="h-3.5 w-3.5" />
+                        {evp.venueRequestSent ? "Request Already Sent" : "Compose Venue Request"}
+                      </Button>
+                      {evp.venueRequestSentAt && (
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <p className="text-xs text-muted">
+                            Sent on {new Date(evp.venueRequestSentAt).toLocaleString()}
+                          </p>
+                          {evp.venueRequestGmailUrl && (
+                            <a
+                              href={evp.venueRequestGmailUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-accent hover:underline"
+                            >
+                              Open in Gmail
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1304,7 +1361,7 @@ export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: session } = useSession();
-  const { minVolunteerTasks } = useAppSettings();
+  const { meetupName, meetupDescription, minVolunteerTasks } = useAppSettings();
   const userRole = session?.user?.globalRole ?? "VIEWER";
   const canEdit = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.EVENT_LEAD;
   const isAdmin = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.ADMIN;
@@ -1376,6 +1433,16 @@ export default function EventDetailPage() {
   const [venueConfirmModal, setVenueConfirmModal] = useState<{ linkId: string; existingName: string } | null>(null);
   const [venueStatusUpdating, setVenueStatusUpdating] = useState<string | null>(null);
   const [sopBlockModal, setSopBlockModal] = useState(false);
+  const [venueRequestModal, setVenueRequestModal] = useState<{
+    linkId: string;
+    venueName: string;
+    venueEmail: string;
+  } | null>(null);
+  const [venueRequestSubject, setVenueRequestSubject] = useState("");
+  const [venueRequestBody, setVenueRequestBody] = useState("");
+  const [venueRequestSending, setVenueRequestSending] = useState(false);
+  const [venueRequestError, setVenueRequestError] = useState<string | null>(null);
+  const [venueRequestSuccess, setVenueRequestSuccess] = useState<string | null>(null);
 
   const loadVolunteersAndMembers = useCallback(async () => {
     const [volRes, memRes] = await Promise.all([
@@ -1474,6 +1541,106 @@ export default function EventDetailPage() {
     }
 
     if (res.ok) fetchEvent();
+  };
+
+  const openVenueRequestComposer = (venueLink: VenuePartnerItem) => {
+    if (!event) return;
+    if (!venueLink.venuePartner.email) {
+      alert("This venue partner does not have an email address.");
+      return;
+    }
+    if (venueLink.venueRequestSent) {
+      alert("A venue request email was already sent for this event.");
+      return;
+    }
+
+    const eventType = event.title.toLowerCase().includes("workshop")
+      ? "Workshop"
+      : event.title.toLowerCase().includes("hackathon")
+        ? "Hackathon"
+        : "Community Meetup";
+
+    const requirementLines = [
+      `- Capacity for ${venueLink.venuePartner.capacity ?? 80} attendees`,
+      "- Projector / screen and audio support",
+      "- Reliable Wi-Fi access",
+      "- Seating arrangement for talks and networking",
+    ];
+    const emailMeetupName =
+      meetupName.replace(/\s*manager\s*$/i, "").trim() || meetupName;
+
+    const draft = [
+      `Hi ${venueLink.venuePartner.contactName ?? "Team"},`,
+      "",
+      `I'm reaching out on behalf of ${emailMeetupName} to check if your venue can host our upcoming event.`,
+      "",
+      "Meetup Group",
+      `${emailMeetupName}`,
+      ...(meetupDescription ? [`- Description: ${meetupDescription}`] : []),
+      "",
+      "Event Type",
+      `${eventType}`,
+      "",
+      "Event Details",
+      `- Event: ${event.title}`,
+      `- Date: ${formatDateTimeRange(event.date, event.endDate)}`,
+      ...(event.description ? [`- Description: ${event.description}`] : []),
+      "",
+      "Event Requirements",
+      ...requirementLines,
+      "",
+      "Please let us know your availability and any hosting terms.",
+      "",
+      "Thanks,",
+      `${session?.user?.name ?? "Event Team"}`,
+      `${emailMeetupName}`,
+    ].join("\n");
+
+    setVenueRequestSubject(`Venue request: ${event.title} by ${emailMeetupName}`);
+    setVenueRequestBody(draft);
+    setVenueRequestError(null);
+    setVenueRequestSuccess(null);
+    setVenueRequestModal({
+      linkId: venueLink.id,
+      venueName: venueLink.venuePartner.name,
+      venueEmail: venueLink.venuePartner.email,
+    });
+  };
+
+  const sendVenueRequestEmail = async () => {
+    if (!venueRequestModal) return;
+    if (!venueRequestSubject.trim() || !venueRequestBody.trim()) {
+      setVenueRequestError("Subject and message are required.");
+      return;
+    }
+
+    setVenueRequestSending(true);
+    setVenueRequestError(null);
+    setVenueRequestSuccess(null);
+    try {
+      const res = await fetch(`/api/events/${id}/venues/${venueRequestModal.linkId}/request-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: venueRequestSubject.trim(),
+          message: venueRequestBody.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error ?? "Failed to send venue request email");
+      }
+      setVenueRequestSuccess(`Sent to ${venueRequestModal.venueEmail}`);
+      fetchEvent();
+      setTimeout(() => {
+        setVenueRequestModal(null);
+        setVenueRequestSuccess(null);
+      }, 1200);
+    } catch (e) {
+      setVenueRequestError(e instanceof Error ? e.message : "Failed to send venue request email");
+    } finally {
+      setVenueRequestSending(false);
+    }
   };
 
   const confirmVenueSwitch = async () => {
@@ -2002,7 +2169,10 @@ export default function EventDetailPage() {
                   setVenueStatusUpdating(null)
                 );
               }}
+              canConfirmVenue={isAdmin}
+              canSendVenueRequest={isAdmin}
               onUnlink={unlinkVenuePartner}
+              onOpenVenueRequest={openVenueRequestComposer}
             />
           )}
 
@@ -2035,6 +2205,64 @@ export default function EventDetailPage() {
               <Button size="sm" onClick={confirmVenueSwitch}>
                 Confirm Switch
               </Button>
+            </div>
+          </Modal>
+
+          <Modal open={!!venueRequestModal} onClose={() => setVenueRequestModal(null)} className="p-6 max-w-2xl">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                <Mail className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold font-[family-name:var(--font-display)]">
+                  Venue Request Email
+                </h2>
+                <p className="text-sm text-muted">
+                  Review and edit the draft before sending to{" "}
+                  <strong>{venueRequestModal?.venueName}</strong>{" "}
+                  ({venueRequestModal?.venueEmail}).
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Subject</label>
+                <input
+                  type="text"
+                  value={venueRequestSubject}
+                  onChange={(e) => setVenueRequestSubject(e.target.value)}
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Message</label>
+                <textarea
+                  value={venueRequestBody}
+                  onChange={(e) => setVenueRequestBody(e.target.value)}
+                  rows={16}
+                  className={cn(INPUT_CLASS, "min-h-[280px] font-[family-name:var(--font-mono)]")}
+                />
+              </div>
+              {venueRequestError && (
+                <p className="text-sm text-status-blocked">{venueRequestError}</p>
+              )}
+              {venueRequestSuccess && (
+                <p className="text-sm text-status-done">{venueRequestSuccess}</p>
+              )}
+              <div className="flex justify-end gap-2 pt-1">
+                <Button
+                  variant="secondary"
+                  onClick={() => setVenueRequestModal(null)}
+                  disabled={venueRequestSending}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={sendVenueRequestEmail} disabled={venueRequestSending}>
+                  <Send className="h-4 w-4" />
+                  {venueRequestSending ? "Sending..." : "Send Request"}
+                </Button>
+              </div>
             </div>
           </Modal>
         </div>

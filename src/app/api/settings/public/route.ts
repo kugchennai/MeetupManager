@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 // Returns meetup name and logo for public pages
 export async function GET() {
   const settings = await prisma.appSetting.findMany({
-    where: { key: { in: ["meetup_name", "logo_light", "logo_dark"] } },
+    where: { key: { in: ["meetup_name", "meetup_description", "logo_light", "logo_dark"] } },
   });
 
   const result: Record<string, string> = {};
@@ -15,6 +15,7 @@ export async function GET() {
 
   return NextResponse.json({
     meetupName: result.meetup_name ?? "Event Manager",
+    meetupDescription: result.meetup_description ?? "",
     logoLight: result.logo_light ?? null,
     logoDark: result.logo_dark ?? null,
   });

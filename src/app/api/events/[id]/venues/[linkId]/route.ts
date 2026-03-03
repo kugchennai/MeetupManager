@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth-helpers";
-import { canUserAccessEvent } from "@/lib/permissions";
+import { canUserAccessEvent, hasMinimumRole } from "@/lib/permissions";
 import { logAudit, diffChanges } from "@/lib/audit";
 import { sendVenueConfirmedEmail } from "@/lib/emails/triggers";
-import type { VenuePartnerStatus, Priority } from "@/generated/prisma/enums";
+import type { VenuePartnerStatus, Priority, GlobalRole } from "@/generated/prisma/enums";
 
 /**
  * Checks if a task title matches "venue confirmation" pattern.
@@ -106,6 +106,15 @@ export async function PATCH(
 
   const body = await req.json();
   const { status, priority, cost, notes, confirmationDate } = body;
+
+  const userRole = session.user.globalRole as GlobalRole;
+  const isConfirmTransition = status === "CONFIRMED" && before.status !== "CONFIRMED";
+  if (isConfirmTransition && !hasMinimumRole(userRole, "ADMIN")) {
+    return NextResponse.json(
+      { error: "Forbidden: Only ADMIN and SUPER_ADMIN can confirm a venue and send venue email" },
+      { status: 403 }
+    );
+  }
 
   const { searchParams } = new URL(req.url);
   const force = searchParams.get("force") === "true";

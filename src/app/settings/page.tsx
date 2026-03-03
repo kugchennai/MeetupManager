@@ -15,6 +15,7 @@ function AppConfigCard() {
   const { meetupName, setMeetupName, minVolunteerTasks, setMinVolunteerTasks, minEventDuration, setMinEventDuration, logoLight, setLogoLight, logoDark, setLogoDark } = useAppSettings();
   const [config, setConfig] = useState({
     meetupName: "",
+    meetupDescription: "",
     volunteerThreshold: "5",
     minVolunteerTasks: "7", 
     minEventDuration: "4"
@@ -41,6 +42,10 @@ function AppConfigCard() {
     fetch("/api/settings")
       .then((r) => (r.ok ? r.json() : {}))
       .then((data: Record<string, string>) => {
+        setConfig(prev => ({
+          ...prev,
+          meetupDescription: data.meetup_description ?? "",
+        }));
         if (data.volunteer_promotion_threshold) {
           setConfig(prev => ({ ...prev, volunteerThreshold: data.volunteer_promotion_threshold }));
         }
@@ -56,7 +61,7 @@ function AppConfigCard() {
     setDarkPreview(logoDark);
   }, [logoDark]);
 
-  const handleSave = async (key: string, value: string, contextSetter?: (v: any) => void) => {
+  const handleSave = async (key: string, value: string, contextSetter?: (v: string | number) => void) => {
     // Validation
     if (key === 'meetupName') {
       const trimmed = value.trim();
@@ -65,6 +70,8 @@ function AppConfigCard() {
         return;
       }
       value = trimmed;
+    } else if (key === "meetupDescription") {
+      value = value.trim();
     } else if (['volunteerThreshold', 'minVolunteerTasks', 'minEventDuration'].includes(key)) {
       const num = parseInt(value, 10);
       if (isNaN(num) || num < 1) {
@@ -84,6 +91,7 @@ function AppConfigCard() {
     try {
       const apiKey = {
         meetupName: 'meetup_name',
+        meetupDescription: "meetup_description",
         volunteerThreshold: 'volunteer_promotion_threshold',
         minVolunteerTasks: 'min_volunteer_tasks',
         minEventDuration: 'min_event_duration'
@@ -332,6 +340,51 @@ function AppConfigCard() {
           {errors.meetupName && <p className="mt-2 text-sm text-status-blocked">{errors.meetupName}</p>}
         </div>
 
+        {/* Meetup Group Description */}
+        <div>
+          <div className="flex flex-col gap-3">
+            <div className="max-w-[640px]">
+              <label className="block text-sm font-medium mb-1.5">
+                Meetup Group Description
+              </label>
+              <textarea
+                value={config.meetupDescription}
+                onChange={(e) => {
+                  setConfig(prev => ({ ...prev, meetupDescription: e.target.value }));
+                  setSaved(prev => ({ ...prev, meetupDescription: false }));
+                }}
+                placeholder="Share what your meetup group is about, who it is for, and what members can expect."
+                rows={4}
+                className={INPUT_CLASS}
+              />
+              <p className="mt-1 text-xs text-muted">
+                Optional. This can be shown on public or onboarding pages.
+              </p>
+            </div>
+            <div>
+              <Button
+                size="md"
+                onClick={() => handleSave("meetupDescription", config.meetupDescription)}
+                disabled={saving.meetupDescription}
+                className={cn(saved.meetupDescription && "bg-status-done/15 text-status-done border-status-done/20")}
+              >
+                {saved.meetupDescription ? (
+                  <>
+                    <Check className="h-4 w-4" /> Saved
+                  </>
+                ) : saving.meetupDescription ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+          {errors.meetupDescription && <p className="mt-2 text-sm text-status-blocked">{errors.meetupDescription}</p>}
+        </div>
+
         {/* Min Event Duration */}
         <div>
           <div className="flex items-end gap-3">
@@ -462,7 +515,7 @@ function AppConfigCard() {
             <div>
               <h4 className="font-medium mb-1">Group Logo</h4>
               <p className="text-sm text-muted">
-                Upload your group's logo for light and dark themes. The light logo will be used in email headers.
+                Upload your group&apos;s logo for light and dark themes. The light logo will be used in email headers.
               </p>
             </div>
           </div>
