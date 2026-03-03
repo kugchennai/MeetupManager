@@ -56,6 +56,9 @@ async function main() {
   // Seed default app settings
   const defaultSettings = [
     { key: "meetup_name", value: "Meetup Manager" },
+    { key: "meetup_description", value: "" },
+    { key: "meetup_website", value: "" },
+    { key: "meetup_past_event_link", value: "" },
     { key: "volunteer_promotion_threshold", value: "5" },
     { key: "min_volunteer_tasks", value: "7" },
     { key: "min_event_duration", value: "4" }
