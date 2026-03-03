@@ -13,7 +13,12 @@ export async function GET(req: Request) {
   }
 
   // Return all volunteers (including those who have logged in and linked their accounts)
+  // Only return standalone volunteers (not linked to members)
+  // Members assigned to events as volunteers are tracked separately
   const volunteers = await prisma.volunteer.findMany({
+    where: {
+      userId: null, // Exclude member-linked volunteers
+    },
     include: {
       events: {
         select: {
