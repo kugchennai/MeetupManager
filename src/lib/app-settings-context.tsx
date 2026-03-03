@@ -8,6 +8,8 @@ interface AppSettingsContextValue {
   meetupDescription: string;
   meetupWebsite: string;
   meetupPastEventLink: string;
+  venueRequestCc: string;
+  setVenueRequestCc: (emails: string) => void;
   minVolunteerTasks: number;
   setMinVolunteerTasks: (n: number) => void;
   minEventDuration: number;
@@ -25,6 +27,8 @@ const AppSettingsContext = createContext<AppSettingsContextValue>({
   meetupDescription: "",
   meetupWebsite: "",
   meetupPastEventLink: "",
+  venueRequestCc: "",
+  setVenueRequestCc: () => {},
   minVolunteerTasks: 7,
   setMinVolunteerTasks: () => {},
   minEventDuration: 4,
@@ -41,6 +45,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [meetupDescription, setMeetupDescription] = useState("");
   const [meetupWebsite, setMeetupWebsite] = useState("");
   const [meetupPastEventLink, setMeetupPastEventLink] = useState("");
+  const [venueRequestCc, setVenueRequestCc] = useState("");
   const [minVolunteerTasks, setMinVolunteerTasks] = useState(7);
   const [minEventDuration, setMinEventDuration] = useState(4);
   const [logoLight, setLogoLight] = useState<string | null>(null);
@@ -62,6 +67,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
         if ("meetup_past_event_link" in data) {
           setMeetupPastEventLink(data.meetup_past_event_link || "");
+        }
+        if ("venue_request_cc" in data) {
+          setVenueRequestCc(data.venue_request_cc || "");
         }
         if (data.min_volunteer_tasks) {
           const parsed = parseInt(data.min_volunteer_tasks, 10);
@@ -86,6 +94,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setMinVolunteerTasks(n);
   }, []);
 
+  const updateVenueRequestCc = useCallback((emails: string) => {
+    setVenueRequestCc(emails);
+  }, []);
+
   const updateMinEventDuration = useCallback((hours: number) => {
     setMinEventDuration(hours);
   }, []);
@@ -106,6 +118,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         meetupDescription,
         meetupWebsite,
         meetupPastEventLink,
+        venueRequestCc,
+        setVenueRequestCc: updateVenueRequestCc,
         minVolunteerTasks,
         setMinVolunteerTasks: updateMinVolunteerTasks,
         minEventDuration,

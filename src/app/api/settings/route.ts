@@ -6,7 +6,7 @@ import { logAudit } from "@/lib/audit";
 import type { GlobalRole } from "@/generated/prisma/enums";
 
 // Public settings anyone authenticated can read
-const PUBLIC_KEYS = ["volunteer_promotion_threshold", "meetup_name", "meetup_description", "meetup_website", "meetup_past_event_link", "min_volunteer_tasks", "min_event_duration", "logo_light", "logo_dark"];
+const PUBLIC_KEYS = ["volunteer_promotion_threshold", "meetup_name", "meetup_description", "meetup_website", "meetup_past_event_link", "venue_request_cc", "min_volunteer_tasks", "min_event_duration", "logo_light", "logo_dark"];
 
 // Max size for base64 logo values (~200KB encoded)
 const MAX_LOGO_SIZE = 300_000;
@@ -35,13 +35,6 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!hasMinimumRole(session.user.globalRole as GlobalRole, "SUPER_ADMIN")) {
-    return NextResponse.json(
-      { error: "Forbidden: Super Admin role required" },
-      { status: 403 }
-    );
-  }
-
   const body = await req.json();
   const { key, value } = body;
 
@@ -51,6 +44,14 @@ export async function PATCH(req: NextRequest) {
 
   if (!PUBLIC_KEYS.includes(key)) {
     return NextResponse.json({ error: "Unknown setting key" }, { status: 400 });
+  }
+
+  const minimumRole = "SUPER_ADMIN";
+  if (!hasMinimumRole(session.user.globalRole as GlobalRole, minimumRole)) {
+    return NextResponse.json(
+      { error: `Forbidden: ${minimumRole.replace("_", " ")} role required` },
+      { status: 403 }
+    );
   }
 
   // Validate logo size

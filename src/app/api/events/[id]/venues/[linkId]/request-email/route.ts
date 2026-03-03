@@ -6,6 +6,8 @@ import { sendEmail } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
 import type { GlobalRole } from "@/generated/prisma/enums";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
@@ -13,6 +15,44 @@ function escapeHtml(input: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function logoAttachmentFromDataUri(dataUri: string, cid: string) {
+  const match = dataUri.match(/^data:(image\/[a-z+]+);base64,(.+)$/i);
+  if (!match) return null;
+
+  return {
+    filename: `logo.${match[1].split("/")[1].replace("+xml", "")}`,
+    content: Buffer.from(match[2], "base64"),
+    contentType: match[1],
+    cid,
+  };
+}
+
+function parseCcEmails(value: unknown): string[] {
+  if (typeof value === "string") {
+    return Array.from(
+      new Set(
+        value
+          .split(/[,\n]/)
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean)
+      )
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return Array.from(
+      new Set(
+        value
+          .filter((entry): entry is string => typeof entry === "string")
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean)
+      )
+    );
+  }
+
+  return [];
 }
 
 export async function POST(
@@ -41,10 +81,18 @@ export async function POST(
   const body = await req.json().catch(() => ({}));
   const subject = typeof body.subject === "string" ? body.subject.trim() : "";
   const message = typeof body.message === "string" ? body.message.trim() : "";
+  const ccEmails = parseCcEmails(body.cc);
+  const invalidCc = ccEmails.find((email) => !EMAIL_REGEX.test(email));
 
   if (!subject || !message) {
     return NextResponse.json(
       { error: "subject and message are required" },
+      { status: 400 }
+    );
+  }
+  if (invalidCc) {
+    return NextResponse.json(
+      { error: `Invalid CC email: ${invalidCc}` },
       { status: 400 }
     );
   }
@@ -88,19 +136,36 @@ export async function POST(
     where: { key: "meetup_name" },
     select: { value: true },
   });
+  const logoLightSetting = await prisma.appSetting.findUnique({
+    where: { key: "logo_light" },
+    select: { value: true },
+  });
   const cleanedMeetupName = (meetupNameSetting?.value || "Meetup")
     .replace(/\s*manager\s*$/i, "")
     .trim();
   const fromName = cleanedMeetupName || "Meetup";
 
-  const html = `<div style="font-family:Arial,sans-serif;white-space:pre-wrap;line-height:1.5;">${escapeHtml(message)}</div>`;
+  const logoCid = "venue-request-logo";
+  const logoAttachment = logoLightSetting?.value
+    ? logoAttachmentFromDataUri(logoLightSetting.value, logoCid)
+    : null;
+
+  const html = [
+    `<div style="font-family:Arial,sans-serif;white-space:pre-wrap;line-height:1.5;">${escapeHtml(message)}</div>`,
+    logoAttachment
+      ? `<div style="margin-top:16px;"><img src="cid:${logoCid}" alt="${escapeHtml(fromName)} logo" style="max-height:48px;max-width:220px;display:block;" /></div>`
+      : "",
+  ].join("");
+
   const result = await sendEmail({
     to: link.venuePartner.email,
+    cc: ccEmails.length > 0 ? ccEmails : undefined,
     subject,
     html,
     text: message,
     template: templateKey,
     fromName,
+    attachments: logoAttachment ? [logoAttachment] : undefined,
   });
 
   if (!result.success) {
@@ -119,6 +184,7 @@ export async function POST(
     changes: {
       venueRequestEmail: {
         to: link.venuePartner.email,
+        cc: ccEmails,
         subject,
         status: "SENT",
       },
@@ -128,5 +194,6 @@ export async function POST(
   return NextResponse.json({
     success: true,
     sentTo: link.venuePartner.email,
+    cc: ccEmails,
   });
 }

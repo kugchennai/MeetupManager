@@ -82,6 +82,19 @@ type EventVolunteerItem = EventDetail["volunteers"][number];
 const INPUT_CLASS =
   "w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm placeholder:text-muted/50 focus:border-accent focus:ring-1 focus:ring-accent/30 outline-none transition-all";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function splitAndNormalizeEmails(raw: string): string[] {
+  return Array.from(
+    new Set(
+      raw
+        .split(/[,\n]/)
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  );
+}
+
 type PickerTab = "members" | "directory";
 
 function VolunteerPicker({
@@ -1361,7 +1374,14 @@ export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: session } = useSession();
-  const { meetupName, meetupDescription, meetupWebsite, meetupPastEventLink, minVolunteerTasks } = useAppSettings();
+  const {
+    meetupName,
+    meetupDescription,
+    meetupWebsite,
+    meetupPastEventLink,
+    venueRequestCc,
+    minVolunteerTasks,
+  } = useAppSettings();
   const userRole = session?.user?.globalRole ?? "VIEWER";
   const canEdit = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.EVENT_LEAD;
   const isAdmin = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.ADMIN;
@@ -1440,6 +1460,7 @@ export default function EventDetailPage() {
   } | null>(null);
   const [venueRequestSubject, setVenueRequestSubject] = useState("");
   const [venueRequestBody, setVenueRequestBody] = useState("");
+  const [venueRequestCcList, setVenueRequestCcList] = useState("");
   const [venueRequestSending, setVenueRequestSending] = useState(false);
   const [venueRequestError, setVenueRequestError] = useState<string | null>(null);
   const [venueRequestSuccess, setVenueRequestSuccess] = useState<string | null>(null);
@@ -1554,52 +1575,58 @@ export default function EventDetailPage() {
       return;
     }
 
-    const eventType = event.title.toLowerCase().includes("workshop")
-      ? "Workshop"
-      : event.title.toLowerCase().includes("hackathon")
-        ? "Hackathon"
-        : "Community Meetup";
-
     const requirementLines = [
-      `- Capacity for ${venueLink.venuePartner.capacity ?? 80} attendees`,
-      "- Projector / screen and audio support",
+      `- Capacity for approximately ${venueLink.venuePartner.capacity ?? 80} attendees`,
+      "- Projector/screen and audio support",
       "- Reliable Wi-Fi access",
-      "- Seating arrangement for talks and networking",
+      "- Seating suitable for talks and networking",
+      "- If possible, refreshments for attendees",
     ];
     const emailMeetupName =
       meetupName.replace(/\s*manager\s*$/i, "").trim() || meetupName;
+    const groupDescription = meetupDescription?.trim() || "<Description>";
+    const eventDescription = event.description?.trim() || "";
+    const senderName = session?.user?.name?.trim() || "Event Team";
+    const signaturePrimary = emailMeetupName;
 
     const draft = [
-      `Hi ${venueLink.venuePartner.contactName ?? "Team"},`,
+      `Hi ${venueLink.venuePartner.name} Team,`,
+      "",
+      "Hope you're doing well!",
       "",
       `I'm reaching out on behalf of ${emailMeetupName} to check if your venue can host our upcoming event.`,
       "",
-      "Meetup Group",
-      `${emailMeetupName}`,
-      ...(meetupDescription ? [`- Description: ${meetupDescription}`] : []),
-      ...(meetupWebsite ? [`- Website: ${meetupWebsite}`] : []),
-      ...(meetupPastEventLink ? [`- You guys can check out our past events here: ${meetupPastEventLink}`] : []),
+      `About ${emailMeetupName}`,
+      groupDescription,
       "",
-      "Event Type",
-      `${eventType}`,
+      "You can explore our past events here:",
+      meetupPastEventLink || "<Past events link>",
       "",
+      "More about us:",
+      meetupWebsite || "<Website link>",
       "Event Details",
-      `- Event: ${event.title}`,
-      `- Date: ${formatDateTimeRange(event.date, event.endDate)}`,
-      ...(event.description ? [`- Description: ${event.description}`] : []),
+      "",
+      `Event Name: ${event.title}`,
+      `Description: ${eventDescription}`,
+      `Date: ${formatDateTimeRange(event.date, event.endDate)}`,
       "",
       "Event Requirements",
+      "",
+      "We're looking for:",
       ...requirementLines,
       "",
-      "Please let us know your availability and any hosting terms.",
+      "Could you please let us know about availability and any hosting terms or requirements from your side?",
       "",
-      "Thanks,",
-      `${session?.user?.name ?? "Event Team"}`,
-      `${emailMeetupName}`,
+      "Looking forward to your response.",
+      "",
+      "Warm regards,",
+      senderName,
+      signaturePrimary,
     ].join("\n");
 
     setVenueRequestSubject(`Venue request: ${event.title} by ${emailMeetupName}`);
     setVenueRequestBody(draft);
+    setVenueRequestCcList(venueRequestCc);
     setVenueRequestError(null);
     setVenueRequestSuccess(null);
     setVenueRequestModal({
@@ -1616,6 +1643,13 @@ export default function EventDetailPage() {
       return;
     }
 
+    const ccEmails = splitAndNormalizeEmails(venueRequestCcList);
+    const invalidCc = ccEmails.find((email) => !EMAIL_REGEX.test(email));
+    if (invalidCc) {
+      setVenueRequestError(`Invalid CC email: ${invalidCc}`);
+      return;
+    }
+
     setVenueRequestSending(true);
     setVenueRequestError(null);
     setVenueRequestSuccess(null);
@@ -1626,6 +1660,7 @@ export default function EventDetailPage() {
         body: JSON.stringify({
           subject: venueRequestSubject.trim(),
           message: venueRequestBody.trim(),
+          cc: ccEmails,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -2228,6 +2263,28 @@ export default function EventDetailPage() {
             </div>
 
             <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">To</label>
+                <input
+                  type="text"
+                  value={venueRequestModal?.venueEmail ?? ""}
+                  readOnly
+                  className={cn(INPUT_CLASS, "bg-muted/20")}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">CC</label>
+                <textarea
+                  value={venueRequestCcList}
+                  onChange={(e) => setVenueRequestCcList(e.target.value)}
+                  rows={2}
+                  placeholder="ops@example.com, lead@example.com"
+                  className={INPUT_CLASS}
+                />
+                <p className="mt-1 text-xs text-muted">
+                  Add one or more CC emails separated by commas or new lines.
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Subject</label>
                 <input

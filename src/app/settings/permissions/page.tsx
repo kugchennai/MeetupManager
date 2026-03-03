@@ -273,7 +273,19 @@ const PERMISSIONS: PermissionRow[] = [
       ADMIN: "none",
       SUPER_ADMIN: "full",
     },
-    note: "Meetup name, volunteer thresholds, minimum tasks",
+    note: "Meetup name, volunteer thresholds, minimum tasks, and logos (Super Admin only)",
+  },
+  {
+    feature: "Venue Request CC Settings",
+    icon: Mail,
+    actions: {
+      VIEWER: "none",
+      VOLUNTEER: "none",
+      EVENT_LEAD: "none",
+      ADMIN: "limited",
+      SUPER_ADMIN: "full",
+    },
+    note: "Default CC in Settings is Super Admin only. Admins can still add/edit CC recipients while composing a venue request email.",
   },
 ];
 
@@ -556,7 +568,7 @@ export default function PermissionsPage() {
           <div className="flex items-start gap-2">
             <span className="text-accent font-bold mt-0.5">2.</span>
             <p>
-              <strong className="text-foreground">Only Super Admins</strong> can assign the Admin role, delete members, or change app-wide settings.
+              <strong className="text-foreground">Only Super Admins</strong> can assign the Admin role, delete members, or change app-wide settings (including default Venue Request CC settings).
             </p>
           </div>
           <div className="flex items-start gap-2">

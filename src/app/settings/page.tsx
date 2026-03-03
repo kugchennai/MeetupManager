@@ -12,12 +12,28 @@ const INPUT_CLASS =
   "w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm placeholder:text-muted/50 focus:border-accent focus:ring-1 focus:ring-accent/30 outline-none transition-all";
 
 function AppConfigCard() {
-  const { meetupName, setMeetupName, meetupWebsite, meetupPastEventLink, minVolunteerTasks, setMinVolunteerTasks, minEventDuration, setMinEventDuration, logoLight, setLogoLight, logoDark, setLogoDark } = useAppSettings();
+  const {
+    meetupName,
+    setMeetupName,
+    meetupWebsite,
+    meetupPastEventLink,
+    venueRequestCc,
+    setVenueRequestCc,
+    minVolunteerTasks,
+    setMinVolunteerTasks,
+    minEventDuration,
+    setMinEventDuration,
+    logoLight,
+    setLogoLight,
+    logoDark,
+    setLogoDark,
+  } = useAppSettings();
   const [config, setConfig] = useState({
     meetupName: "",
     meetupDescription: "",
     meetupWebsite: "",
     meetupPastEventLink: "",
+    venueRequestCc: "",
     volunteerThreshold: "5",
     minVolunteerTasks: "7", 
     minEventDuration: "4"
@@ -38,6 +54,7 @@ function AppConfigCard() {
       meetupName,
       meetupWebsite,
       meetupPastEventLink,
+      venueRequestCc,
       minVolunteerTasks: String(minVolunteerTasks),
       minEventDuration: String(minEventDuration)
     }));
@@ -51,13 +68,14 @@ function AppConfigCard() {
           meetupDescription: data.meetup_description ?? "",
           meetupWebsite: data.meetup_website ?? "",
           meetupPastEventLink: data.meetup_past_event_link ?? "",
+          venueRequestCc: data.venue_request_cc ?? "",
         }));
         if (data.volunteer_promotion_threshold) {
           setConfig(prev => ({ ...prev, volunteerThreshold: data.volunteer_promotion_threshold }));
         }
       })
       .catch(() => {});
-  }, [meetupName, meetupWebsite, meetupPastEventLink, minVolunteerTasks, minEventDuration]);
+  }, [meetupName, meetupWebsite, meetupPastEventLink, venueRequestCc, minVolunteerTasks, minEventDuration]);
 
   useEffect(() => {
     setLightPreview(logoLight);
@@ -76,7 +94,7 @@ function AppConfigCard() {
         return;
       }
       value = trimmed;
-    } else if (key === "meetupDescription" || key === "meetupWebsite" || key === "meetupPastEventLink") {
+    } else if (key === "meetupDescription" || key === "meetupWebsite" || key === "meetupPastEventLink" || key === "venueRequestCc") {
       value = value.trim();
     } else if (['volunteerThreshold', 'minVolunteerTasks', 'minEventDuration'].includes(key)) {
       const num = parseInt(value, 10);
@@ -100,6 +118,7 @@ function AppConfigCard() {
         meetupDescription: "meetup_description",
         meetupWebsite: "meetup_website",
         meetupPastEventLink: "meetup_past_event_link",
+        venueRequestCc: "venue_request_cc",
         volunteerThreshold: 'volunteer_promotion_threshold',
         minVolunteerTasks: 'min_volunteer_tasks',
         minEventDuration: 'min_event_duration'
@@ -471,6 +490,49 @@ function AppConfigCard() {
             </Button>
           </div>
           {errors.meetupPastEventLink && <p className="mt-2 text-sm text-status-blocked">{errors.meetupPastEventLink}</p>}
+        </div>
+
+        {/* Default Venue Request CC */}
+        <div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1 max-w-[640px]">
+              <label className="block text-sm font-medium mb-1.5">
+                Default Venue Request CC Emails
+              </label>
+              <input
+                type="text"
+                value={config.venueRequestCc}
+                onChange={(e) => {
+                  setConfig(prev => ({ ...prev, venueRequestCc: e.target.value }));
+                  setSaved(prev => ({ ...prev, venueRequestCc: false }));
+                }}
+                placeholder="ops@example.com, lead@example.com"
+                className={INPUT_CLASS}
+              />
+              <p className="mt-1 text-xs text-muted">
+                Optional. Comma-separated emails automatically added in venue request drafts.
+              </p>
+            </div>
+            <Button
+              size="md"
+              onClick={() => handleSave("venueRequestCc", config.venueRequestCc, setVenueRequestCc)}
+              disabled={saving.venueRequestCc}
+              className={cn(saved.venueRequestCc && "bg-status-done/15 text-status-done border-status-done/20")}
+            >
+              {saved.venueRequestCc ? (
+                <>
+                  <Check className="h-4 w-4" /> Saved
+                </>
+              ) : saving.venueRequestCc ? (
+                "Saving…"
+              ) : (
+                <>
+                  <Save className="h-4 w-4" /> Save
+                </>
+              )}
+            </Button>
+          </div>
+          {errors.venueRequestCc && <p className="mt-2 text-sm text-status-blocked">{errors.venueRequestCc}</p>}
         </div>
 
         {/* Min Event Duration */}
