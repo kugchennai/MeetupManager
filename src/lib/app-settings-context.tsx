@@ -6,6 +6,8 @@ interface AppSettingsContextValue {
   meetupName: string;
   setMeetupName: (name: string) => void;
   meetupDescription: string;
+  meetupWebsite: string;
+  meetupPastEventLink: string;
   minVolunteerTasks: number;
   setMinVolunteerTasks: (n: number) => void;
   minEventDuration: number;
@@ -21,6 +23,8 @@ const AppSettingsContext = createContext<AppSettingsContextValue>({
   meetupName: "Meetup Manager",
   setMeetupName: () => {},
   meetupDescription: "",
+  meetupWebsite: "",
+  meetupPastEventLink: "",
   minVolunteerTasks: 7,
   setMinVolunteerTasks: () => {},
   minEventDuration: 4,
@@ -35,6 +39,8 @@ const AppSettingsContext = createContext<AppSettingsContextValue>({
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [meetupName, setMeetupName] = useState("Meetup Manager");
   const [meetupDescription, setMeetupDescription] = useState("");
+  const [meetupWebsite, setMeetupWebsite] = useState("");
+  const [meetupPastEventLink, setMeetupPastEventLink] = useState("");
   const [minVolunteerTasks, setMinVolunteerTasks] = useState(7);
   const [minEventDuration, setMinEventDuration] = useState(4);
   const [logoLight, setLogoLight] = useState<string | null>(null);
@@ -50,6 +56,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
         if ("meetup_description" in data) {
           setMeetupDescription(data.meetup_description || "");
+        }
+        if ("meetup_website" in data) {
+          setMeetupWebsite(data.meetup_website || "");
+        }
+        if ("meetup_past_event_link" in data) {
+          setMeetupPastEventLink(data.meetup_past_event_link || "");
         }
         if (data.min_volunteer_tasks) {
           const parsed = parseInt(data.min_volunteer_tasks, 10);
@@ -92,6 +104,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         meetupName,
         setMeetupName: updateMeetupName,
         meetupDescription,
+        meetupWebsite,
+        meetupPastEventLink,
         minVolunteerTasks,
         setMinVolunteerTasks: updateMinVolunteerTasks,
         minEventDuration,

@@ -1361,7 +1361,7 @@ export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: session } = useSession();
-  const { meetupName, meetupDescription, minVolunteerTasks } = useAppSettings();
+  const { meetupName, meetupDescription, meetupWebsite, meetupPastEventLink, minVolunteerTasks } = useAppSettings();
   const userRole = session?.user?.globalRole ?? "VIEWER";
   const canEdit = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.EVENT_LEAD;
   const isAdmin = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.ADMIN;
@@ -1577,6 +1577,8 @@ export default function EventDetailPage() {
       "Meetup Group",
       `${emailMeetupName}`,
       ...(meetupDescription ? [`- Description: ${meetupDescription}`] : []),
+      ...(meetupWebsite ? [`- Website: ${meetupWebsite}`] : []),
+      ...(meetupPastEventLink ? [`- You guys can check out our past events here: ${meetupPastEventLink}`] : []),
       "",
       "Event Type",
       `${eventType}`,

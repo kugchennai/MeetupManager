@@ -12,10 +12,12 @@ const INPUT_CLASS =
   "w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm placeholder:text-muted/50 focus:border-accent focus:ring-1 focus:ring-accent/30 outline-none transition-all";
 
 function AppConfigCard() {
-  const { meetupName, setMeetupName, minVolunteerTasks, setMinVolunteerTasks, minEventDuration, setMinEventDuration, logoLight, setLogoLight, logoDark, setLogoDark } = useAppSettings();
+  const { meetupName, setMeetupName, meetupWebsite, meetupPastEventLink, minVolunteerTasks, setMinVolunteerTasks, minEventDuration, setMinEventDuration, logoLight, setLogoLight, logoDark, setLogoDark } = useAppSettings();
   const [config, setConfig] = useState({
     meetupName: "",
     meetupDescription: "",
+    meetupWebsite: "",
+    meetupPastEventLink: "",
     volunteerThreshold: "5",
     minVolunteerTasks: "7", 
     minEventDuration: "4"
@@ -34,6 +36,8 @@ function AppConfigCard() {
     setConfig(prev => ({
       ...prev,
       meetupName,
+      meetupWebsite,
+      meetupPastEventLink,
       minVolunteerTasks: String(minVolunteerTasks),
       minEventDuration: String(minEventDuration)
     }));
@@ -45,13 +49,15 @@ function AppConfigCard() {
         setConfig(prev => ({
           ...prev,
           meetupDescription: data.meetup_description ?? "",
+          meetupWebsite: data.meetup_website ?? "",
+          meetupPastEventLink: data.meetup_past_event_link ?? "",
         }));
         if (data.volunteer_promotion_threshold) {
           setConfig(prev => ({ ...prev, volunteerThreshold: data.volunteer_promotion_threshold }));
         }
       })
       .catch(() => {});
-  }, [meetupName, minVolunteerTasks, minEventDuration]);
+  }, [meetupName, meetupWebsite, meetupPastEventLink, minVolunteerTasks, minEventDuration]);
 
   useEffect(() => {
     setLightPreview(logoLight);
@@ -61,7 +67,7 @@ function AppConfigCard() {
     setDarkPreview(logoDark);
   }, [logoDark]);
 
-  const handleSave = async (key: string, value: string, contextSetter?: (v: string | number) => void) => {
+  const handleSave = async (key: string, value: string, contextSetter?: (v: string) => void) => {
     // Validation
     if (key === 'meetupName') {
       const trimmed = value.trim();
@@ -70,7 +76,7 @@ function AppConfigCard() {
         return;
       }
       value = trimmed;
-    } else if (key === "meetupDescription") {
+    } else if (key === "meetupDescription" || key === "meetupWebsite" || key === "meetupPastEventLink") {
       value = value.trim();
     } else if (['volunteerThreshold', 'minVolunteerTasks', 'minEventDuration'].includes(key)) {
       const num = parseInt(value, 10);
@@ -92,6 +98,8 @@ function AppConfigCard() {
       const apiKey = {
         meetupName: 'meetup_name',
         meetupDescription: "meetup_description",
+        meetupWebsite: "meetup_website",
+        meetupPastEventLink: "meetup_past_event_link",
         volunteerThreshold: 'volunteer_promotion_threshold',
         minVolunteerTasks: 'min_volunteer_tasks',
         minEventDuration: 'min_event_duration'
@@ -110,7 +118,7 @@ function AppConfigCard() {
 
       // Update context if available
       if (contextSetter) {
-        contextSetter(key === 'meetupName' ? value : parseInt(value, 10));
+        contextSetter(value);
       }
 
       setSaved(prev => ({ ...prev, [key]: true }));
@@ -385,6 +393,86 @@ function AppConfigCard() {
           {errors.meetupDescription && <p className="mt-2 text-sm text-status-blocked">{errors.meetupDescription}</p>}
         </div>
 
+        {/* Meetup Website */}
+        <div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1 max-w-[480px]">
+              <label className="block text-sm font-medium mb-1.5">
+                Meetup Website
+              </label>
+              <input
+                type="url"
+                value={config.meetupWebsite}
+                onChange={(e) => {
+                  setConfig(prev => ({ ...prev, meetupWebsite: e.target.value }));
+                  setSaved(prev => ({ ...prev, meetupWebsite: false }));
+                }}
+                placeholder="https://example.com"
+                className={INPUT_CLASS}
+              />
+            </div>
+            <Button
+              size="md"
+              onClick={() => handleSave("meetupWebsite", config.meetupWebsite)}
+              disabled={saving.meetupWebsite}
+              className={cn(saved.meetupWebsite && "bg-status-done/15 text-status-done border-status-done/20")}
+            >
+              {saved.meetupWebsite ? (
+                <>
+                  <Check className="h-4 w-4" /> Saved
+                </>
+              ) : saving.meetupWebsite ? (
+                "Saving…"
+              ) : (
+                <>
+                  <Save className="h-4 w-4" /> Save
+                </>
+              )}
+            </Button>
+          </div>
+          {errors.meetupWebsite && <p className="mt-2 text-sm text-status-blocked">{errors.meetupWebsite}</p>}
+        </div>
+
+        {/* Past Event Link */}
+        <div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1 max-w-[640px]">
+              <label className="block text-sm font-medium mb-1.5">
+                Past Event Link
+              </label>
+              <input
+                type="url"
+                value={config.meetupPastEventLink}
+                onChange={(e) => {
+                  setConfig(prev => ({ ...prev, meetupPastEventLink: e.target.value }));
+                  setSaved(prev => ({ ...prev, meetupPastEventLink: false }));
+                }}
+                placeholder="https://example.com/past-events/event-42"
+                className={INPUT_CLASS}
+              />
+            </div>
+            <Button
+              size="md"
+              onClick={() => handleSave("meetupPastEventLink", config.meetupPastEventLink)}
+              disabled={saving.meetupPastEventLink}
+              className={cn(saved.meetupPastEventLink && "bg-status-done/15 text-status-done border-status-done/20")}
+            >
+              {saved.meetupPastEventLink ? (
+                <>
+                  <Check className="h-4 w-4" /> Saved
+                </>
+              ) : saving.meetupPastEventLink ? (
+                "Saving…"
+              ) : (
+                <>
+                  <Save className="h-4 w-4" /> Save
+                </>
+              )}
+            </Button>
+          </div>
+          {errors.meetupPastEventLink && <p className="mt-2 text-sm text-status-blocked">{errors.meetupPastEventLink}</p>}
+        </div>
+
         {/* Min Event Duration */}
         <div>
           <div className="flex items-end gap-3">
@@ -406,7 +494,7 @@ function AppConfigCard() {
             </div>
             <Button
               size="md"
-              onClick={() => handleSave('minEventDuration', config.minEventDuration, setMinEventDuration)}
+              onClick={() => handleSave('minEventDuration', config.minEventDuration, (v) => setMinEventDuration(parseInt(v, 10)))}
               disabled={saving.minEventDuration}
               className={cn(saved.minEventDuration && "bg-status-done/15 text-status-done border-status-done/20")}
             >
@@ -486,7 +574,7 @@ function AppConfigCard() {
             </div>
             <Button
               size="md"
-              onClick={() => handleSave('minVolunteerTasks', config.minVolunteerTasks, setMinVolunteerTasks)}
+              onClick={() => handleSave('minVolunteerTasks', config.minVolunteerTasks, (v) => setMinVolunteerTasks(parseInt(v, 10)))}
               disabled={saving.minVolunteerTasks}
               className={cn(saved.minVolunteerTasks && "bg-status-done/15 text-status-done border-status-done/20")}
             >
