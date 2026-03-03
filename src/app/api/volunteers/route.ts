@@ -12,6 +12,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Return all volunteers (including those who have logged in and linked their accounts)
   // Only return standalone volunteers (not linked to members)
   // Members assigned to events as volunteers are tracked separately
   const volunteers = await prisma.volunteer.findMany({
@@ -26,6 +27,9 @@ export async function GET(req: Request) {
             select: { id: true, title: true, date: true },
           },
         },
+      },
+      user: {
+        select: { id: true, name: true, image: true },
       },
     },
     orderBy: { name: "asc" },
