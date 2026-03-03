@@ -16,12 +16,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const callerRole = session.user.globalRole as GlobalRole;
-
   const users = await prisma.user.findMany({
     where: {
-      // Only Super Admins can see volunteer-role users in the members list
-      ...(callerRole !== "SUPER_ADMIN" ? { globalRole: { not: "VOLUNTEER" } } : {}),
+      // Members API should never include volunteer-role users
+      globalRole: { not: "VOLUNTEER" },
     },
     select: {
       id: true,
