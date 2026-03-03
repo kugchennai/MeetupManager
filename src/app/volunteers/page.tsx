@@ -14,6 +14,7 @@ interface Volunteer {
   discordId: string | null;
   role: string | null;
   userId: string | null;
+  user?: { id: string; name: string | null; image: string | null } | null;
   createdAt: string;
   updatedAt: string;
   eventsCount?: number;

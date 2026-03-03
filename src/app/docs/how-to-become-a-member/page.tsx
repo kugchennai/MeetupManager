@@ -12,6 +12,8 @@ import {
   ArrowRight,
   Zap,
   Shield,
+  Heart,
+  BookOpen,
 } from "lucide-react";
 
 const STEPS = [
@@ -149,6 +151,39 @@ export default function HowToBecomeMemberPage() {
             Join our core team and help shape the community. Here's everything you need to know about becoming a member.
           </p>
         </div>
+
+        {/* Our Expectation */}
+        <section className="mb-16">
+          <div className="rounded-xl border border-accent/30 bg-accent/5 p-6">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                <Heart className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold font-[family-name:var(--font-display)] mb-2">
+                  What We Expect From You
+                </h2>
+                <p className="text-muted leading-relaxed mb-4">
+                  As a volunteer or member, we also want you to <strong className="text-foreground">learn</strong> and <strong className="text-foreground">give back</strong> to the community.
+                </p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-2">
+                    <BookOpen className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+                    <span className="text-sm text-muted">
+                      <strong className="text-foreground">Learn</strong> — Grow your skills through active participation
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Heart className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+                    <span className="text-sm text-muted">
+                      <strong className="text-foreground">Give Back</strong> — Share knowledge and help others grow
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Steps */}
         <section className="mb-16">
