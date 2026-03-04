@@ -2,7 +2,7 @@
 
 import { PageHeader, EmptyState, Button, PriorityBadge, Modal } from "@/components/design-system";
 import { ClipboardCheck, Plus, Pencil, Trash2, X, ChevronDown, ChevronRight, Copy, FileText } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 type Section = "PRE_EVENT" | "ON_DAY" | "POST_EVENT";
@@ -115,6 +115,34 @@ function TemplateFormModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const serializeFormState = (
+    currentName: string,
+    currentDescription: string,
+    currentSectionData: Record<Section, SectionData>
+  ) => JSON.stringify({
+    name: currentName,
+    description: currentDescription,
+    sectionData: currentSectionData,
+  });
+
+  const initialSnapshotRef = useRef(
+    serializeFormState(name, description, sectionData)
+  );
+
+  const hasUnsavedChanges =
+    serializeFormState(name, description, sectionData) !==
+    initialSnapshotRef.current;
+
+  const handleClose = (force = false) => {
+    if (!force && hasUnsavedChanges && !submitting) {
+      const shouldDiscard = window.confirm(
+        "Changes will be lost if you close this template. Do you want to discard changes?"
+      );
+      if (!shouldDiscard) return;
+    }
+    onClose();
+  };
+
   const addSubcategory = (section: Section) => {
     const existing = sectionData[section].map((g) => g.subcategory);
     const available = DEFAULT_SUBCATEGORIES[section].filter((s) => !existing.includes(s));
@@ -213,7 +241,7 @@ function TemplateFormModal({
         throw new Error(data.error ?? "Request failed");
       }
       onSuccess();
-      onClose();
+      handleClose(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -222,13 +250,13 @@ function TemplateFormModal({
   };
 
   return (
-    <Modal open onClose={onClose} className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <Modal open onClose={() => handleClose()} className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
         <h2 className="text-lg font-semibold font-[family-name:var(--font-display)]">
           {isEdit ? "Edit Template" : "New Template"}
         </h2>
         <button
-          onClick={onClose}
+          onClick={() => handleClose()}
           className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-surface-hover transition-colors"
         >
           <X className="h-4 w-4" />
@@ -399,7 +427,7 @@ function TemplateFormModal({
         </div>
 
         <div className="flex justify-end gap-2 px-5 py-4 border-t border-border shrink-0">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={() => handleClose()}>
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>

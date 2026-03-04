@@ -1,0 +1,15 @@
+# Codex Default Rules
+
+## Git Branch Rule
+Before committing, check whether the current branch is `main`.
+If it is `main`, create and switch to a feature branch before committing.
+Never commit directly to `main`.
+
+## Git Push Rule
+Before every `git push`, remind the user to:
+1. Check pending Prisma migrations with `npx prisma migrate status`.
+2. If there are new schema changes, add migrations on the server side in the Vercel dashboard using `npx prisma migrate deploy`.
+   Note: `npx prisma migrate deploy` is safe to run multiple times and only applies pending migrations.
+3. Ensure `src/generated/prisma/` files are up to date with the schema.
+
+Apply these reminders regardless of which conversation requested the push.
