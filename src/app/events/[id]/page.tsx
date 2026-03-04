@@ -10,7 +10,7 @@ import {
   ChevronDown, ChevronsUpDown, Building2, AlertTriangle, RefreshCw, ExternalLink, Link2, Mail, Send,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { formatDate, formatRelativeDate, formatDateTimeRange, cn } from "@/lib/utils";
@@ -888,7 +888,9 @@ function ChecklistTab({
   onTemplateChanged?: () => void;
 }) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const allCollapsed = checklists.length > 0 && checklists.every((c) => collapsed[c.id]);
+  const [assigneeFilter, setAssigneeFilter] = useState<string>("all");
+  const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
+  const assigneeMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Template change state
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
@@ -934,14 +936,79 @@ function ChecklistTab({
     }
   };
 
+  const assigneeOptions = useMemo(() => {
+    const options = new Map<string, { key: string; name: string }>();
+    for (const checklist of checklists) {
+      for (const task of checklist.tasks) {
+        if (task.volunteerAssignee) {
+          const key = `volunteer:${task.volunteerAssignee.id}`;
+          if (!options.has(key)) {
+            options.set(key, { key, name: task.volunteerAssignee.name });
+          }
+          continue;
+        }
+        if (task.assignee) {
+          const key = `member:${task.assignee.id}`;
+          if (!options.has(key)) {
+            options.set(key, { key, name: task.assignee.name ?? "Unknown user" });
+          }
+        }
+      }
+    }
+    return Array.from(options.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [checklists]);
+
+  const effectiveAssigneeFilter =
+    assigneeFilter === "all" ||
+    assigneeFilter === "unassigned" ||
+    assigneeOptions.some((option) => option.key === assigneeFilter)
+      ? assigneeFilter
+      : "all";
+
+  const visibleChecklists = useMemo(() => {
+    return checklists
+      .map((checklist) => ({
+        ...checklist,
+        tasks: checklist.tasks.filter((task) => {
+          if (effectiveAssigneeFilter === "all") return true;
+          if (effectiveAssigneeFilter === "unassigned") {
+            return !task.volunteerAssignee && !task.assignee;
+          }
+          if (task.volunteerAssignee) {
+            return effectiveAssigneeFilter === `volunteer:${task.volunteerAssignee.id}`;
+          }
+          if (task.assignee) {
+            return effectiveAssigneeFilter === `member:${task.assignee.id}`;
+          }
+          return false;
+        }),
+      }))
+      .filter((checklist) => checklist.tasks.length > 0);
+  }, [checklists, effectiveAssigneeFilter]);
+
+  const allCollapsed =
+    visibleChecklists.length > 0 && visibleChecklists.every((c) => collapsed[c.id]);
+
   const toggleAll = () => {
     const next: Record<string, boolean> = {};
-    for (const c of checklists) next[c.id] = !allCollapsed;
+    for (const c of visibleChecklists) next[c.id] = !allCollapsed;
     setCollapsed(next);
   };
 
   const toggle = (id: string) =>
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  useEffect(() => {
+    if (!assigneeMenuOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!assigneeMenuRef.current) return;
+      if (event.target instanceof Node && !assigneeMenuRef.current.contains(event.target)) {
+        setAssigneeMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [assigneeMenuOpen]);
 
   if (checklists.length === 0) {
     return (
@@ -960,7 +1027,7 @@ function ChecklistTab({
 
   // Build section groups maintaining order
   const sectionMap = new Map<string, EventDetail["checklists"]>();
-  for (const cl of checklists) {
+  for (const cl of visibleChecklists) {
     const parsed = parseChecklistSection(cl.title);
     if (parsed) {
       const sec = parsed.section;
@@ -979,33 +1046,96 @@ function ChecklistTab({
   }
 
   const hasSubcategories = sectionGroups.length > 0;
+  const hasVisibleTasks = visibleChecklists.length > 0;
+  const assigneeLabel =
+    effectiveAssigneeFilter === "all"
+      ? "All assignees"
+      : effectiveAssigneeFilter === "unassigned"
+        ? "Unassigned"
+        : assigneeOptions.find((option) => option.key === effectiveAssigneeFilter)?.name ?? "All assignees";
 
   const selectedTemplateName = templates.find((t) => t.id === selectedTemplateId)?.name;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <div className="relative group">
-          <button
-            onClick={isAdmin ? openTemplatePicker : undefined}
-            disabled={!isAdmin}
-            className={cn(
-              "inline-flex items-center gap-1.5 text-xs rounded-lg px-3 py-1.5 border transition-colors",
-              isAdmin
-                ? "text-muted hover:text-foreground hover:border-accent/40 border-border cursor-pointer"
-                : "text-muted/40 border-border/50 cursor-not-allowed"
-            )}
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Change SOP Template
-          </button>
-          {!isAdmin && (
-            <div className="absolute left-0 bottom-full mb-1 hidden group-hover:block z-10 w-52">
-              <div className="bg-surface border border-border rounded-lg px-3 py-2 text-[11px] text-muted shadow-lg">
-                Only admins can change the SOP template.
+        <div className="flex items-center gap-2">
+          <div className="relative group">
+            <button
+              onClick={isAdmin ? openTemplatePicker : undefined}
+              disabled={!isAdmin}
+              className={cn(
+                "inline-flex items-center gap-1.5 text-xs rounded-lg px-3 py-1.5 border transition-colors",
+                isAdmin
+                  ? "text-muted hover:text-foreground hover:border-accent/40 border-border cursor-pointer"
+                  : "text-muted/40 border-border/50 cursor-not-allowed"
+              )}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Change SOP Template
+            </button>
+            {!isAdmin && (
+              <div className="absolute left-0 bottom-full mb-1 hidden group-hover:block z-10 w-52">
+                <div className="bg-surface border border-border rounded-lg px-3 py-2 text-[11px] text-muted shadow-lg">
+                  Only admins can change the SOP template.
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          <div className="relative" ref={assigneeMenuRef}>
+            <button
+              onClick={() => setAssigneeMenuOpen((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 text-xs text-muted border border-border rounded-lg px-2.5 py-1.5 hover:text-foreground hover:bg-surface-hover transition-colors cursor-pointer"
+            >
+              <Users className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Assigned To</span>
+              <span className="text-foreground max-w-[140px] truncate">{assigneeLabel}</span>
+              <ChevronDown className={cn("h-3.5 w-3.5 text-muted transition-transform", assigneeMenuOpen && "rotate-180")} />
+            </button>
+            {assigneeMenuOpen && (
+              <div className="absolute top-full left-0 mt-1 z-30 w-60 bg-surface border border-border rounded-lg shadow-xl py-1 animate-fade-in">
+                <button
+                  onClick={() => {
+                    setAssigneeFilter("all");
+                    setAssigneeMenuOpen(false);
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-surface-hover transition-colors cursor-pointer",
+                    effectiveAssigneeFilter === "all" && "text-accent bg-accent/10"
+                  )}
+                >
+                  <span>All assignees</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setAssigneeFilter("unassigned");
+                    setAssigneeMenuOpen(false);
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-surface-hover transition-colors cursor-pointer",
+                    effectiveAssigneeFilter === "unassigned" && "text-accent bg-accent/10"
+                  )}
+                >
+                  <span>Unassigned</span>
+                </button>
+                {assigneeOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    onClick={() => {
+                      setAssigneeFilter(option.key);
+                      setAssigneeMenuOpen(false);
+                    }}
+                    className={cn(
+                      "flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-surface-hover transition-colors cursor-pointer",
+                      effectiveAssigneeFilter === option.key && "text-accent bg-accent/10"
+                    )}
+                  >
+                    <span className="truncate">{option.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <button
           onClick={toggleAll}
@@ -1096,7 +1226,13 @@ function ChecklistTab({
       </Modal>
 
       <div className="space-y-6">
-        {hasSubcategories ? (
+        {!hasVisibleTasks ? (
+          <div className="bg-surface border border-border rounded-xl p-8 text-center">
+            <p className="text-sm text-muted">
+              No SOP tasks match this assignee filter.
+            </p>
+          </div>
+        ) : hasSubcategories ? (
           <>
             {sectionGroups.map(({ section, checklists: sectionChecklists }) => {
               const sectionColors = CHECKLIST_COLORS[section];
@@ -1280,7 +1416,7 @@ function ChecklistTab({
         ) : (
           /* Legacy layout: flat checklists without section grouping */
           <div className="space-y-4">
-            {checklists.map((checklist) => {
+            {visibleChecklists.map((checklist) => {
               const colors = CHECKLIST_COLORS[checklist.title];
               const isCollapsed = !!collapsed[checklist.id];
               const done = checklist.tasks.filter((t) => t.status === "DONE").length;
