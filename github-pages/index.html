@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeetupManager | Where Meetup Quality Comes First.</title>
+    <meta
+      name="description"
+      content="Open-source tooling built for organizers who care about meaningful meetups, not vanity metrics."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient-bg" aria-hidden="true">
+      <div class="blob blob-a"></div>
+      <div class="blob blob-b"></div>
+      <div class="grid"></div>
+    </div>
+
+    <header class="hero container reveal">
+      <p class="eyebrow">Open Source • Quality-First Meetup Ops</p>
+      <h1>MeetupManager</h1>
+      <p class="tagline">Where Meetup Quality Comes First.</p>
+      <p class="subtext">
+        Open-source tooling built for organizers who care about meaningful meetups
+        not vanity metrics.
+      </p>
+      <p class="subtext">
+        Self-host it yourself, or sponsor and we will set it up for you on free-tier
+        infrastructure.
+      </p>
+
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/kugchennai/AgenticEventManager" target="_blank" rel="noreferrer">View Source</a>
+        <a class="btn btn-sponsor" href="https://github.com/sponsors" target="_blank" rel="noreferrer">Sponsor &amp; Get Setup Help</a>
+      </div>
+
+      <p class="sponsor-note">
+        Sponsor at least <strong>$10</strong> and we will deploy it on Vercel + Neon free tiers
+        with a <strong>vercel.app</strong> domain.
+      </p>
+
+      <div class="stats" aria-label="social proof">
+        <div class="chip">Built for community organizers</div>
+        <div class="chip">Self-host or sponsor for setup on Vercel + Neon free tiers</div>
+        <div class="chip"><span id="organizerCount">0</span>+ organizers exploring quality-first workflows</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section container reveal">
+        <h2>Most meetup tools optimize for growth. Not quality.</h2>
+        <div class="three-col">
+          <article class="card">
+            <h3>Checklist-driven organizing</h3>
+            <p>Teams complete tasks, but session outcomes remain unclear.</p>
+          </article>
+          <article class="card">
+            <h3>Engagement vanity metrics</h3>
+            <p>Attendance looks good on paper while feedback quality drops.</p>
+          </article>
+          <article class="card">
+            <h3>Manual chaos in operations</h3>
+            <p>Speakers, venues, and volunteers still run on scattered docs.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section container reveal">
+        <h2>Built for Organizers Who Care.</h2>
+        <div class="feature-grid">
+          <article class="feature">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="feature-icon-svg">
+                <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                <line x1="16" y1="3" x2="16" y2="7"></line>
+                <line x1="8" y1="3" x2="8" y2="7"></line>
+                <line x1="3" y1="11" x2="21" y2="11"></line>
+              </svg>
+            </span>
+            <h3>Event Lifecycle + SOP Checklist</h3>
+            <p>Create events, track status, and run template-based pre/on-day/post-event tasks.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="feature-icon-svg">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </span>
+            <h3>Speaker and Volunteer Workflows</h3>
+            <p>Manage directories, link people to events, and let volunteers self-assign open tasks.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="feature-icon-svg">
+                <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                <path d="M9 21v-6h6v6"></path>
+                <path d="M9 8h.01"></path>
+                <path d="M9 12h.01"></path>
+                <path d="M15 8h.01"></path>
+                <path d="M15 12h.01"></path>
+              </svg>
+            </span>
+            <h3>Venue Partner Pipeline</h3>
+            <p>Track venue inquiries to confirmation with contact, cost, and status history.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="feature-icon-svg">
+                <path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z"></path>
+                <path d="M9 12l2 2 4-4"></path>
+              </svg>
+            </span>
+            <h3>Role-Based Access + Audit Trail</h3>
+            <p>Permission-aware UI plus detailed create/update/delete activity logs.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="feature-icon-svg">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                <path d="M22 7l-10 7L2 7"></path>
+              </svg>
+            </span>
+            <h3>11 Automated Email Workflows</h3>
+            <p>Member invites, task reminders, weekly digest, and calendar-ready event reminder emails.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="feature-icon-svg">
+                <circle cx="7.5" cy="15.5" r="2.5"></circle>
+                <path d="M10 15.5h10"></path>
+                <path d="M17 12.5v6"></path>
+                <path d="M3 15.5a4.5 4.5 0 1 1 9 0"></path>
+              </svg>
+            </span>
+            <h3>Simplified Google Sign-In</h3>
+            <p>Quick access with Google auth so organizers can start managing events faster.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="feature-icon-svg">
+                <line x1="4" y1="20" x2="20" y2="20"></line>
+                <rect x="6" y="11" width="3" height="7"></rect>
+                <rect x="11" y="8" width="3" height="10"></rect>
+                <rect x="16" y="5" width="3" height="13"></rect>
+              </svg>
+            </span>
+            <h3>Organizer Dashboard</h3>
+            <p>Next event snapshot, assigned tasks, overdue items, and recent operational activity.</p>
+          </article>
+          <article class="feature">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="feature-icon-svg">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+            </span>
+            <h3>Open Source and Extensible</h3>
+            <p>MIT-licensed codebase with public roadmap, contribution flow, and customizable settings.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section container reveal">
+        <h2>How It Works</h2>
+        <div class="steps">
+          <article class="step">
+            <span>1</span>
+            <h3>Install / Deploy</h3>
+            <p>Self-host from the repo, or sponsor and we will set it up on a free <strong>vercel.app</strong> URL.</p>
+          </article>
+          <article class="step">
+            <span>2</span>
+            <h3>Configure Your Meetup</h3>
+            <p>Add sessions, speakers, and workflows for your chapter.</p>
+          </article>
+          <article class="step">
+            <span>3</span>
+            <h3>Focus on Quality</h3>
+            <p>Run the checklist, close tasks, and improve execution for the next meetup.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section section-highlight container reveal">
+        <h2>Community Built. Community Owned.</h2>
+        <ul>
+          <li>MIT licensed</li>
+          <li>Public roadmap</li>
+          <li>Contributions welcome</li>
+          <li>Issues and feature requests encouraged</li>
+        </ul>
+        <a class="btn btn-primary" href="https://github.com/kugchennai/AgenticEventManager" target="_blank" rel="noreferrer">View Source</a>
+      </section>
+
+      <section class="section container reveal">
+        <h2>Don’t Want to Self-Host?</h2>
+        <article class="sponsor-card">
+          <h3>Sponsor &amp; We’ll Set It Up With You</h3>
+          <ul>
+            <li>Minimum sponsorship: <strong>$10</strong></li>
+            <li>Deployment on Vercel (free tier)</li>
+            <li>Neon PostgreSQL (free tier)</li>
+            <li>Deployment setup on your free <strong>vercel.app</strong> URL</li>
+            <li>Setup guidance + email support for deployment issues</li>
+          </ul>
+          <a class="btn btn-sponsor" href="https://github.com/sponsors" target="_blank" rel="noreferrer">Sponsor &amp; Get Setup Help</a>
+          <p class="fine-print">This covers setup time. Infrastructure stays on free tiers.</p>
+        </article>
+      </section>
+
+      <section class="section container reveal">
+        <h2>Built For</h2>
+        <div class="audience">
+          <span>GDG organizers</span>
+          <span>KUG chapters</span>
+          <span>Community tech leaders</span>
+          <span>College tech clubs</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer container reveal">
+      <a href="https://github.com/kugchennai/AgenticEventManager" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://github.com/kugchennai/AgenticEventManager/blob/main/LICENSE" target="_blank" rel="noreferrer">License</a>
+      <a href="mailto:hello@meetupmanager.dev">Contact</a>
+      <a href="https://www.linkedin.com" target="_blank" rel="noreferrer">LinkedIn</a>
+      <p>Built with care for the community.</p>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
