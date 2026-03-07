@@ -132,26 +132,56 @@ export async function POST(
     );
   }
 
-  const meetupNameSetting = await prisma.appSetting.findUnique({
-    where: { key: "meetup_name" },
-    select: { value: true },
-  });
-  const logoLightSetting = await prisma.appSetting.findUnique({
-    where: { key: "logo_light" },
-    select: { value: true },
-  });
+  const [meetupNameSetting, logoLightSetting, eventLeads, adminUsers] = await Promise.all([
+    prisma.appSetting.findUnique({ where: { key: "meetup_name" }, select: { value: true } }),
+    prisma.appSetting.findUnique({ where: { key: "logo_light" }, select: { value: true } }),
+    prisma.eventMember.findMany({
+      where: { eventId, eventRole: { in: ["LEAD", "ORGANIZER"] } },
+      include: { user: { select: { id: true, name: true, phone: true, email: true } } },
+    }),
+    prisma.user.findMany({
+      where: { globalRole: "ADMIN", deletedAt: null },
+      select: { id: true, name: true, phone: true, email: true },
+    }),
+  ]);
+
   const cleanedMeetupName = (meetupNameSetting?.value || "Meetup")
     .replace(/\s*manager\s*$/i, "")
     .trim();
   const fromName = cleanedMeetupName || "Meetup";
+
+  // Build deduplicated contact list (event leads first, then admins)
+  const contactMap = new Map<string, { name: string | null; phone: string | null; role: string }>();
+  for (const m of eventLeads) {
+    contactMap.set(m.user.id, { name: m.user.name, phone: m.user.phone, role: "Event Lead" });
+  }
+  for (const u of adminUsers) {
+    if (!contactMap.has(u.id)) {
+      contactMap.set(u.id, { name: u.name, phone: u.phone, role: "Admin" });
+    }
+  }
+  const contacts = Array.from(contactMap.values()).filter((c) => c.phone);
 
   const logoCid = "venue-request-logo";
   const logoAttachment = logoLightSetting?.value
     ? logoAttachmentFromDataUri(logoLightSetting.value, logoCid)
     : null;
 
+  const contactsHtml = contacts.length > 0
+    ? `<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-family:Arial,sans-serif;">` +
+      `<p style="margin:0 0 10px 0;font-size:14px;color:#374151;">If you have any doubts, please feel free to contact us:</p>` +
+      contacts.map((c) =>
+        `<p style="margin:0 0 4px 0;font-size:13px;color:#4b5563;">` +
+        `<strong>${escapeHtml(c.name ?? "Team Member")}</strong>` +
+        ` &mdash; ${escapeHtml(c.phone!)}` +
+        `</p>`
+      ).join("") +
+      `</div>`
+    : "";
+
   const html = [
     `<div style="font-family:Arial,sans-serif;white-space:pre-wrap;line-height:1.5;">${escapeHtml(message)}</div>`,
+    contactsHtml,
     logoAttachment
       ? `<div style="margin-top:16px;"><img src="cid:${logoCid}" alt="${escapeHtml(fromName)} logo" style="max-height:48px;max-width:220px;display:block;" /></div>`
       : "",
