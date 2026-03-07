@@ -253,6 +253,30 @@ const PERMISSIONS: PermissionRow[] = [
     },
   },
   {
+    feature: "Public Code of Conduct (View)",
+    icon: ScrollText,
+    actions: {
+      VIEWER: "full",
+      VOLUNTEER: "full",
+      EVENT_LEAD: "full",
+      ADMIN: "full",
+      SUPER_ADMIN: "full",
+    },
+    note: "Accessible at /docs/code-of-conduct for both signed-in users and public visitors",
+  },
+  {
+    feature: "Public Code of Conduct (Edit)",
+    icon: ScrollText,
+    actions: {
+      VIEWER: "none",
+      VOLUNTEER: "none",
+      EVENT_LEAD: "none",
+      ADMIN: "none",
+      SUPER_ADMIN: "full",
+    },
+    note: "Only Super Admin can edit/publish content changes",
+  },
+  {
     feature: "Discord Integration",
     icon: Bot,
     actions: {

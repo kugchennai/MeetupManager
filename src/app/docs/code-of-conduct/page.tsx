@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Zap, Scale, ShieldCheck, Mail } from "lucide-react";
+import { Zap, Scale, ShieldCheck } from "lucide-react";
 
 const DEFAULT_COC_CONTENT = `
 <p>We are committed to a welcoming, safe, and inclusive community experience for everyone.</p>
@@ -35,7 +35,6 @@ export default function CodeOfConductPage() {
   const [logoLight, setLogoLight] = useState<string | null>(null);
   const [logoDark, setLogoDark] = useState<string | null>(null);
   const [codeOfConductContent, setCodeOfConductContent] = useState("");
-  const [superAdminEmails, setSuperAdminEmails] = useState<string[]>([]);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === "undefined") return true;
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -58,11 +57,6 @@ export default function CodeOfConductPage() {
         if (data.logoDark) setLogoDark(data.logoDark);
         if (typeof data.codeOfConductContent === "string") {
           setCodeOfConductContent(data.codeOfConductContent);
-        }
-        if (Array.isArray(data.superAdminEmails)) {
-          setSuperAdminEmails(
-            data.superAdminEmails.filter((email: unknown): email is string => typeof email === "string" && email.length > 0)
-          );
         }
       })
       .catch(() => {});
@@ -126,34 +120,6 @@ export default function CodeOfConductPage() {
           </div>
         </section>
 
-        <section className="mb-16">
-          <div className="rounded-xl border border-border bg-surface p-6 sm:p-8">
-            <h2 className="text-xl font-semibold font-[family-name:var(--font-display)] mb-3 flex items-center gap-2">
-              <Mail className="h-5 w-5 text-accent" />
-              Contact Team Heads
-            </h2>
-            <p className="text-sm text-muted mb-4">
-              For queries or concerns related to the Code of Conduct, contact our team heads.
-            </p>
-            {superAdminEmails.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {superAdminEmails.map((email) => (
-                  <a
-                    key={email}
-                    href={`mailto:${email}?subject=Code%20of%20Conduct%20Concern`}
-                    className="text-sm px-3 py-1.5 rounded-md border border-border hover:border-accent/40 hover:bg-accent/5 transition-colors"
-                  >
-                    {email}
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted">
-                Contact details are currently unavailable. Please reach out through the event organizers.
-              </p>
-            )}
-          </div>
-        </section>
       </main>
 
       <footer className="relative z-10 border-t border-border py-6 mt-12">

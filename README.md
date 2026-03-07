@@ -156,6 +156,7 @@ This app uses NextAuth v5 with Google as the web sign-in provider.
 
 - **Permissions & Access** — read-only reference page showing global roles, permission matrix, event roles, and key rules
 - **Email Workflows** — visual reference for all 11 automated email notifications with trigger conditions, recipients, and subject lines; accessible to all authenticated users at `/settings/permissions/email-workflows`
+- **Public Code of Conduct** — policy page at `/docs/code-of-conduct` with publicly visible content and Super Admin-managed updates from Settings
 
 ### Audit Trail
 
@@ -251,6 +252,7 @@ This app uses NextAuth v5 with Google as the web sign-in provider.
 
 - **Volunteer promotion threshold** — Super Admin-only setting to configure the minimum event contributions before a volunteer can be promoted to member
 - **Group logo upload** — upload light and dark logo variants (PNG, JPEG, SVG, WebP, max 200KB); the light logo is automatically embedded in all email headers via CID attachment
+- **Public Code of Conduct editor** — Super Admin-only save control for HTML policy content displayed on the public Code of Conduct page
 - **Key-value store** — extensible `AppSetting` model for future settings
 - **Logo serving endpoint** — `GET /api/settings/logo?variant=light|dark` serves stored logos as real images with caching headers (public, no auth required)
 - **Audit-logged** — all setting changes are tracked
@@ -267,7 +269,7 @@ This app uses NextAuth v5 with Google as the web sign-in provider.
 | `VOLUNTEER` | Volunteer | 1 | Read assigned events, self-assign tasks, toggle own task status |
 | `EVENT_LEAD` | Member | 2 | Create and manage events, read all events, manage speakers / volunteers / venues |
 | `ADMIN` | Admin | 3 | Full access to all events, manage members (except other admins), audit log |
-| `SUPER_ADMIN` | Super Admin | 4 | Everything + manage admins, app settings, member removal with ownership reassignment |
+| `SUPER_ADMIN` | Super Admin | 4 | Everything + manage admins, app settings, public Code of Conduct publishing, member removal with ownership reassignment |
 
 ### Event Roles (per-event, hierarchy 0 → 3)
 
