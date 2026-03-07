@@ -31,7 +31,7 @@ interface EventDetail {
   pageLink: string | null;
   status: string;
   createdBy: { id: string; name: string | null; image: string | null };
-  members: { eventRole: string; user: { id: string; name: string | null; image: string | null } }[];
+  members: { eventRole: string; user: { id: string; name: string | null; image: string | null; phone: string | null } }[];
   speakers: {
     id: string;
     status: string;
@@ -1703,7 +1703,7 @@ export default function EventDetailPage() {
     if (res.ok) fetchEvent();
   };
 
-  const openVenueRequestComposer = (venueLink: VenuePartnerItem) => {
+  const openVenueRequestComposer = async (venueLink: VenuePartnerItem) => {
     if (!event) return;
     if (!venueLink.venuePartner.email) {
       alert("This venue partner does not have an email address.");
@@ -1728,6 +1728,31 @@ export default function EventDetailPage() {
     const senderName = session?.user?.name?.trim() || "Event Team";
     const signaturePrimary = emailMeetupName;
 
+    // Fetch admin contacts with phone numbers
+    const contactLines: string[] = [];
+    try {
+      const membersRes = await fetch("/api/members");
+      if (membersRes.ok) {
+        const allMembers: { globalRole: string; name: string | null; phone: string | null }[] = await membersRes.json();
+        const adminContacts = allMembers.filter(
+          (m) => m.globalRole === "ADMIN" && m.phone
+        );
+        // Event leads from this event with phone
+        const leadContacts = event.members
+          .filter((m) => ["LEAD", "ORGANIZER"].includes(m.eventRole) && m.user.phone)
+          .map((m) => ({ name: m.user.name, phone: m.user.phone }));
+        // Deduplicate by name
+        const seen = new Set<string>();
+        const combined = [...leadContacts, ...adminContacts.map((m) => ({ name: m.name, phone: m.phone }))];
+        for (const c of combined) {
+          if (c.phone && !seen.has(c.name ?? "")) {
+            seen.add(c.name ?? "");
+            contactLines.push(`${c.name ?? "Team Member"} - ${c.phone}`);
+          }
+        }
+      }
+    } catch { /* ignore */ }
+
     const draft = [
       `Hi ${venueLink.venuePartner.name} Team,`,
       "",
@@ -1743,6 +1768,7 @@ export default function EventDetailPage() {
       "",
       "More about us:",
       meetupWebsite || "<Website link>",
+      "",
       "Event Details",
       "",
       `Event Name: ${event.title}`,
@@ -1762,6 +1788,9 @@ export default function EventDetailPage() {
       "Warm regards,",
       senderName,
       signaturePrimary,
+      ...(contactLines.length > 0
+        ? ["", "If you have any doubts, please feel free to contact us:", ...contactLines]
+        : []),
     ].join("\n");
 
     setVenueRequestSubject(`Venue request: ${event.title} by ${emailMeetupName}`);
