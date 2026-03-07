@@ -625,6 +625,8 @@ function TaskRow({
   volunteerMode?: boolean;
   currentVolunteerId?: string | null;
 }) {
+  const { globalTimezone } = useAppSettings();
+
   const [showAssignee, setShowAssignee] = useState(false);
   const [editingDeadline, setEditingDeadline] = useState(false);
   const [deadlineValue, setDeadlineValue] = useState(
@@ -835,7 +837,7 @@ function TaskRow({
             {task.deadline ? (
               <>
                 <CalendarDays className="h-3 w-3 inline mr-1" />
-                {formatDate(task.deadline)}
+                {formatDate(task.deadline, globalTimezone)}
               </>
             ) : canEditDeadline ? (
               <>
@@ -851,8 +853,8 @@ function TaskRow({
 }
 
 const CHECKLIST_COLORS: Record<string, { accent: string; bg: string; border: string; dot: string }> = {
-  "Pre-Event":  { accent: "text-blue-400",    bg: "bg-blue-400/10",    border: "border-blue-400/20",  dot: "bg-blue-400" },
-  "On-Day":     { accent: "text-amber-400",   bg: "bg-amber-400/10",   border: "border-amber-400/20", dot: "bg-amber-400" },
+  "Pre-Event": { accent: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20", dot: "bg-blue-400" },
+  "On-Day": { accent: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20", dot: "bg-amber-400" },
   "Post-Event": { accent: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20", dot: "bg-emerald-400" },
 };
 
@@ -960,8 +962,8 @@ function ChecklistTab({
 
   const effectiveAssigneeFilter =
     assigneeFilter === "all" ||
-    assigneeFilter === "unassigned" ||
-    assigneeOptions.some((option) => option.key === assigneeFilter)
+      assigneeFilter === "unassigned" ||
+      assigneeOptions.some((option) => option.key === assigneeFilter)
       ? assigneeFilter
       : "all";
 
@@ -1517,6 +1519,7 @@ export default function EventDetailPage() {
     meetupPastEventLink,
     venueRequestCc,
     minVolunteerTasks,
+    globalTimezone,
   } = useAppSettings();
   const userRole = session?.user?.globalRole ?? "VIEWER";
   const canEdit = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.EVENT_LEAD;
@@ -1744,7 +1747,8 @@ export default function EventDetailPage() {
       "",
       `Event Name: ${event.title}`,
       `Description: ${eventDescription}`,
-      `Date: ${formatDateTimeRange(event.date, event.endDate)}`,
+      `Date: ${formatDateTimeRange(event.date, event.endDate, globalTimezone)}`,
+      `Timezone: ${globalTimezone}`,
       "",
       "Event Requirements",
       "",
@@ -1896,8 +1900,8 @@ export default function EventDetailPage() {
   const openEdit = () => {
     setEditForm({
       title: event.title,
-      date: event.date.slice(0, 16),
-      endDate: event.endDate.slice(0, 16),
+      date: event.date,
+      endDate: event.endDate,
       venue: event.venue ?? "",
       description: event.description ?? "",
       pageLink: event.pageLink ?? "",
@@ -1909,7 +1913,7 @@ export default function EventDetailPage() {
   const saveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editForm.title.trim() || !editForm.date || !editForm.endDate) return;
-    
+
     // Validate that end date is after start date
     const startDate = new Date(editForm.date);
     const endDate = new Date(editForm.endDate);
@@ -1917,7 +1921,7 @@ export default function EventDetailPage() {
       setDateValidationError("End time must be greater than start time");
       return;
     }
-    
+
     setDateValidationError(null);
     setEditSaving(true);
     const res = await fetch(`/api/events/${id}`, {
@@ -1968,7 +1972,7 @@ export default function EventDetailPage() {
           <div className="flex items-center gap-4 text-sm text-muted">
             <span className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
-              {formatDateTimeRange(event.date, event.endDate)} ({formatRelativeDate(event.date)})
+              {formatDateTimeRange(event.date, event.endDate, globalTimezone)} ({formatRelativeDate(event.date)})
             </span>
             {event.venue && (
               <span className="flex items-center gap-1.5">
@@ -2020,6 +2024,7 @@ export default function EventDetailPage() {
             <label className="block text-sm font-medium mb-1.5">Start Date & Time *</label>
             <DateTimePicker
               required
+              timeZone={globalTimezone}
               value={editForm.date}
               onChange={(date) => {
                 setEditForm((f) => ({ ...f, date }));
@@ -2034,6 +2039,7 @@ export default function EventDetailPage() {
             <label className="block text-sm font-medium mb-1.5">End Date & Time *</label>
             <DateTimePicker
               required
+              timeZone={globalTimezone}
               value={editForm.endDate}
               minDateTime={editForm.date} // Constrain end time to be after start time
               onChange={(endDate) => {
@@ -2098,9 +2104,9 @@ export default function EventDetailPage() {
           const Icon = tab.icon;
           const count =
             tab.id === "speakers" ? event.speakers.length :
-            tab.id === "volunteers" ? event.volunteers.length :
-            tab.id === "venues" ? event.venuePartners.length :
-            tab.id === "checklist" ? allTasks.length : undefined;
+              tab.id === "volunteers" ? event.volunteers.length :
+                tab.id === "venues" ? event.venuePartners.length :
+                  tab.id === "checklist" ? allTasks.length : undefined;
 
           return (
             <button

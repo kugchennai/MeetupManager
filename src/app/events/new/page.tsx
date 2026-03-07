@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useAppSettings } from "@/lib/app-settings-context";
 
 interface SOPTemplate {
   id: string;
@@ -21,6 +22,8 @@ export default function CreateEventPage() {
   const { data: session, status } = useSession();
   const userRole = session?.user?.globalRole ?? "";
   const hasAccess = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.EVENT_LEAD;
+
+  const { globalTimezone } = useAppSettings();
 
   useEffect(() => {
     if (status === "loading") return;
@@ -44,12 +47,12 @@ export default function CreateEventPage() {
     fetch("/api/templates")
       .then((r) => (r.ok ? r.json() : []))
       .then(setTemplates)
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate that end date is after start date
     if (form.date && form.endDate) {
       const startDate = new Date(form.date);
@@ -59,7 +62,7 @@ export default function CreateEventPage() {
         return;
       }
     }
-    
+
     setDateValidationError(null);
     setSubmitting(true);
 
@@ -131,6 +134,7 @@ export default function CreateEventPage() {
               </label>
               <DateTimePicker
                 required
+                timeZone={globalTimezone}
                 value={form.date}
                 onChange={(date) => {
                   setForm({ ...form, date });
@@ -147,6 +151,7 @@ export default function CreateEventPage() {
               </label>
               <DateTimePicker
                 required
+                timeZone={globalTimezone}
                 value={form.endDate}
                 minDateTime={form.date} // Constrain end time to be after start time
                 onChange={(endDate) => {

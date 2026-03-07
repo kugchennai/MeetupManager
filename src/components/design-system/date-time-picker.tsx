@@ -16,6 +16,7 @@ import {
   isBefore,
   startOfDay,
 } from "date-fns";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { Calendar, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ interface DateTimePickerProps {
   placeholder?: string;
   className?: string;
   minDateTime?: string; // Minimum allowed date/time in ISO format
+  timeZone?: string;
 }
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -37,15 +39,16 @@ export function DateTimePicker({
   placeholder = "Pick a date & time",
   className,
   minDateTime,
+  timeZone,
 }: DateTimePickerProps) {
+  const selectedDate = value ? (timeZone ? toZonedTime(new Date(value), timeZone) : new Date(value)) : null;
+
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => {
-    if (value) return startOfMonth(new Date(value));
-    return startOfMonth(new Date());
+    if (selectedDate) return startOfMonth(selectedDate);
+    return startOfMonth(timeZone ? toZonedTime(new Date(), timeZone) : new Date());
   });
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const selectedDate = value ? new Date(value) : null;
 
   const [hour, setHour] = useState(() =>
     selectedDate ? selectedDate.getHours() : 10
@@ -57,11 +60,11 @@ export function DateTimePicker({
   // Sync time fields when value changes externally
   useEffect(() => {
     if (value) {
-      const d = new Date(value);
+      const d = timeZone ? toZonedTime(new Date(value), timeZone) : new Date(value);
       setHour(d.getHours());
       setMinute(d.getMinutes());
     }
-  }, [value]);
+  }, [value, timeZone]);
 
   // Close on outside click
   useEffect(() => {
@@ -90,14 +93,18 @@ export function DateTimePicker({
 
   const emitValue = useCallback(
     (date: Date, h: number, m: number) => {
-      const d = new Date(date);
-      d.setHours(h, m, 0, 0);
-      // Emit as datetime-local compatible string: YYYY-MM-DDTHH:MM
       const pad = (n: number) => String(n).padStart(2, "0");
-      const str = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(h)}:${pad(m)}`;
-      onChange(str);
+      const localStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(h)}:${pad(m)}:00`;
+
+      if (timeZone) {
+        onChange(fromZonedTime(localStr, timeZone).toISOString());
+      } else {
+        const d = new Date(date);
+        d.setHours(h, m, 0, 0);
+        onChange(d.toISOString());
+      }
     },
-    [onChange]
+    [onChange, timeZone]
   );
 
   const handleDayClick = (day: Date) => {
@@ -128,9 +135,19 @@ export function DateTimePicker({
   // Helper to check if a date/time combination is valid
   const isDateTimeValid = (date: Date, h: number, m: number) => {
     if (!minDateTimeObj) return true;
-    const candidate = new Date(date);
-    candidate.setHours(h, m, 0, 0);
-    return candidate >= minDateTimeObj;
+
+    let candidateIso = "";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const localStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(h)}:${pad(m)}:00`;
+
+    if (timeZone) {
+      candidateIso = fromZonedTime(localStr, timeZone).toISOString();
+    } else {
+      const d = new Date(date);
+      d.setHours(h, m, 0, 0);
+      candidateIso = d.toISOString();
+    }
+    return new Date(candidateIso) >= minDateTimeObj;
   };
 
   return (
@@ -148,7 +165,7 @@ export function DateTimePicker({
         <Calendar className="h-4 w-4 text-muted shrink-0" />
         <span className="flex-1 truncate">
           {selectedDate
-            ? format(selectedDate, "EEE, MMM d, yyyy · h:mm a")
+            ? format(selectedDate, "EEE, MMM d, yyyy · h:mm a") + (timeZone ? ` (${Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "short" }).formatToParts(new Date()).find(p => p.type === "timeZoneName")?.value || ""})` : "")
             : placeholder}
         </span>
       </button>
@@ -159,7 +176,7 @@ export function DateTimePicker({
           type="text"
           required
           value={value}
-          onChange={() => {}}
+          onChange={() => { }}
           className="sr-only"
           tabIndex={-1}
           aria-hidden
@@ -230,7 +247,7 @@ export function DateTimePicker({
                     inMonth && !selected && !disabled && "text-foreground hover:bg-surface-hover",
                     inMonth && disabled && "text-muted/30 cursor-not-allowed",
                     selected &&
-                      "bg-accent text-accent-fg font-semibold shadow-sm shadow-accent/25",
+                    "bg-accent text-accent-fg font-semibold shadow-sm shadow-accent/25",
                     todayMark && !selected && inMonth && "font-semibold"
                   )}
                 >
@@ -290,7 +307,7 @@ export function DateTimePicker({
             <button
               type="button"
               onClick={() => {
-                const now = new Date();
+                const now = timeZone ? toZonedTime(new Date(), timeZone) : new Date();
                 setViewDate(startOfMonth(now));
                 handleDayClick(now);
               }}

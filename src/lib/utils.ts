@@ -5,21 +5,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: Date | string) {
+export function formatDate(date: Date | string, timeZone?: string) {
   return new Date(date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone,
   });
 }
 
-export function formatDateTime(date: Date | string) {
+export function formatDateTime(date: Date | string, timeZone?: string) {
   return new Date(date).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone,
+    timeZoneName: "short",
   });
 }
 
@@ -28,32 +31,38 @@ export function formatDateTime(date: Date | string) {
  * Same day:  "Mar 1, 2026, 10:00 AM – 12:30 PM"
  * Different days: "Mar 1, 2026, 10:00 AM – Mar 2, 2026, 12:30 PM"
  */
-export function formatDateTimeRange(start: Date | string, end: Date | string) {
+export function formatDateTimeRange(start: Date | string, end: Date | string, timeZone?: string) {
   const s = new Date(start);
   const e = new Date(end);
-  const sameDay =
-    s.getFullYear() === e.getFullYear() &&
-    s.getMonth() === e.getMonth() &&
-    s.getDate() === e.getDate();
+
+  // To strictly check if it's the same day in target timezone, 
+  // we can compare the date string formatted in that timezone.
+  const sDateStr = s.toLocaleDateString("en-US", { timeZone });
+  const eDateStr = e.toLocaleDateString("en-US", { timeZone });
+  const sameDay = sDateStr === eDateStr;
 
   if (sameDay) {
     const datePart = s.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
+      timeZone,
     });
     const startTime = s.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
+      timeZone,
     });
     const endTime = e.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
+      timeZone,
+      timeZoneName: "short",
     });
     return `${datePart}, ${startTime} – ${endTime}`;
   }
 
-  return `${formatDateTime(s)} – ${formatDateTime(e)}`;
+  return `${formatDateTime(s, timeZone)} – ${formatDateTime(e, timeZone)}`;
 }
 
 export function formatRelativeDate(date: Date | string) {

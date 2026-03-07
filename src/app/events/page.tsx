@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { formatDate, formatRelativeDate, formatDateTimeRange, cn } from "@/lib/utils";
+import { useAppSettings } from "@/lib/app-settings-context";
 
 interface Event {
   id: string;
@@ -39,7 +40,7 @@ function isToday(dateStr: string) {
   );
 }
 
-function EventCard({ event }: { event: Event }) {
+function EventCard({ event, timeZone }: { event: Event; timeZone: string }) {
   const upcoming = isUpcoming(event.date);
   const today = isToday(event.date);
 
@@ -91,7 +92,7 @@ function EventCard({ event }: { event: Event }) {
         <div className="flex items-center gap-3 text-xs text-muted mt-auto pt-2 border-t border-border">
           <span className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            {formatDateTimeRange(event.date, event.endDate)} ({formatRelativeDate(event.date)})
+            {formatDateTimeRange(event.date, event.endDate, timeZone)} <span className="hidden sm:inline">({formatRelativeDate(event.date)})</span>
           </span>
           {event.venue && (
             <span className="flex items-center gap-1 truncate">
@@ -116,6 +117,8 @@ export default function EventsPage() {
   const { data: session } = useSession();
   const userRole = session?.user?.globalRole ?? "VIEWER";
   const canCreate = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.EVENT_LEAD;
+
+  const { globalTimezone } = useAppSettings();
 
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,8 +154,8 @@ export default function EventsPage() {
 
   const filtered =
     activeFilter === "today" ? todayEvents :
-    activeFilter === "upcoming" ? upcoming :
-    activeFilter === "past" ? past : events;
+      activeFilter === "upcoming" ? upcoming :
+        activeFilter === "past" ? past : events;
 
   const FILTERS: { id: Filter; label: string; count: number }[] = [
     ...(hasTodayEvents ? [{ id: "today" as Filter, label: "Today", count: todayEvents.length }] : []),
@@ -231,8 +234,8 @@ export default function EventsPage() {
           icon={Calendar}
           title={
             activeFilter === "today" ? "No events today" :
-            activeFilter === "upcoming" ? "No upcoming events" :
-            "No past events"
+              activeFilter === "upcoming" ? "No upcoming events" :
+                "No past events"
           }
           description={
             activeFilter === "today"
@@ -245,7 +248,7 @@ export default function EventsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} timeZone={globalTimezone} />
           ))}
         </div>
       )}

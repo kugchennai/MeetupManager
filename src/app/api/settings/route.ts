@@ -18,6 +18,7 @@ const PUBLIC_KEYS = [
   "logo_light",
   "logo_dark",
   "code_of_conduct_content",
+  "global_timezone",
 ];
 
 // Max size for base64 logo values (~200KB encoded)

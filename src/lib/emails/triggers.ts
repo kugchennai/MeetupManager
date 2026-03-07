@@ -32,16 +32,17 @@ function getAppUrl(): string {
   );
 }
 
-function formatDate(date: Date | string): string {
+function formatDate(date: Date | string, timeZone?: string): string {
   return new Date(date).toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone,
   });
 }
 
-function formatDateTime(date: Date | string): string {
+function formatDateTime(date: Date | string, timeZone?: string): string {
   return new Date(date).toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -49,6 +50,8 @@ function formatDateTime(date: Date | string): string {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone,
+    timeZoneName: "short",
   });
 }
 
@@ -59,6 +62,7 @@ interface EmailBranding {
   logoUrl?: string;
   /** Raw base64 data URI of the logo — passed to renderAndSend for CID embedding */
   logoBase64?: string;
+  globalTimezone?: string;
 }
 
 /** CID identifier used in <img src="cid:..."> and as the attachment CID */
@@ -74,7 +78,7 @@ export const LOGO_CID = "company-logo";
 async function getEmailBranding(): Promise<EmailBranding> {
   try {
     const settings = await prisma.appSetting.findMany({
-      where: { key: { in: ["meetup_name", "logo_light"] } },
+      where: { key: { in: ["meetup_name", "logo_light", "global_timezone"] } },
     });
     const map: Record<string, string> = {};
     for (const s of settings) map[s.key] = s.value;
@@ -85,6 +89,7 @@ async function getEmailBranding(): Promise<EmailBranding> {
       appName: map.meetup_name || "Meetup Manager",
       logoUrl: hasLogo ? `cid:${LOGO_CID}` : undefined,
       logoBase64: map.logo_light || undefined,
+      globalTimezone: map.global_timezone || undefined,
     };
   } catch {
     return { appName: "Meetup Manager" };
@@ -258,8 +263,8 @@ export async function sendEventCreatedEmail(eventId: string): Promise<void> {
       "event_created",
       React.createElement(EventCreatedEmail, {
         eventTitle: event.title,
-        date: formatDateTime(event.date),
-        endDate: formatDateTime(event.endDate),
+        date: formatDateTime(event.date, branding.globalTimezone),
+        endDate: formatDateTime(event.endDate, branding.globalTimezone),
         venue: event.venue,
         eventUrl,
         createdBy: event.createdBy.name ?? "Team Member",
@@ -329,8 +334,8 @@ export async function sendEventReminderEmail(eventId: string): Promise<void> {
       "event_reminder",
       React.createElement(EventReminderEmail, {
         eventTitle: event.title,
-        date: formatDateTime(event.date),
-        endDate: formatDateTime(event.endDate),
+        date: formatDateTime(event.date, branding.globalTimezone),
+        endDate: formatDateTime(event.endDate, branding.globalTimezone),
         venue: event.venue,
         eventUrl,
         daysUntil,
@@ -390,7 +395,7 @@ export async function sendTaskAssignedEmail(
       React.createElement(TaskAssignedEmail, {
         taskTitle: task.title,
         priority: task.priority,
-        deadline: task.deadline ? formatDate(task.deadline) : null,
+        deadline: task.deadline ? formatDate(task.deadline, branding.globalTimezone) : null,
         eventName: task.checklist.event.title,
         taskUrl,
         assignedBy: assignedByName,
@@ -441,7 +446,7 @@ export async function sendTaskDueSoonEmail(
       "task_due_soon",
       React.createElement(TaskDueSoonEmail, {
         taskTitle: task.title,
-        deadline: formatDate(task.deadline),
+        deadline: formatDate(task.deadline, branding.globalTimezone),
         daysRemaining,
         eventName: task.checklist.event.title,
         taskUrl,
@@ -500,8 +505,8 @@ export async function sendTaskOverdueEmail(
     // Get event lead email for CC
     const eventLeadEmails = ccEventLead
       ? task.checklist.event.members
-          .map((m) => m.user.email)
-          .filter((email): email is string => !!email && email !== recipientEmail)
+        .map((m) => m.user.email)
+        .filter((email): email is string => !!email && email !== recipientEmail)
       : undefined;
 
     await renderAndSend(
@@ -510,7 +515,7 @@ export async function sendTaskOverdueEmail(
       "task_overdue",
       React.createElement(TaskOverdueEmail, {
         taskTitle: task.title,
-        deadline: formatDate(task.deadline),
+        deadline: formatDate(task.deadline, branding.globalTimezone),
         overdueDays,
         eventName: task.checklist.event.title,
         taskUrl,
@@ -567,8 +572,8 @@ export async function sendSpeakerInvitationEmail(
         speakerName: link.speaker.name,
         eventTitle: link.event.title,
         topic: link.speaker.topic,
-        date: formatDateTime(link.event.date),
-        endDate: formatDateTime(link.event.endDate),
+        date: formatDateTime(link.event.date, branding.globalTimezone),
+        endDate: formatDateTime(link.event.endDate, branding.globalTimezone),
         venue: link.event.venue,
         appName: branding.appName,
         logoUrl: branding.logoUrl,
@@ -635,7 +640,7 @@ export async function sendVenueConfirmedEmail(
         venueName: link.venuePartner.name,
         address: link.venuePartner.address,
         capacity: link.venuePartner.capacity,
-        confirmationDate: formatDate(new Date()),
+        confirmationDate: formatDate(new Date(), branding.globalTimezone),
         eventTitle: event.title,
         contactName: link.venuePartner.contactName,
         appName: branding.appName,
@@ -738,20 +743,20 @@ export async function sendWeeklyDigestEmail(userId: string): Promise<void> {
           title: t.title,
           eventTitle: t.checklist.event.title,
           priority: t.priority,
-          deadline: t.deadline ? formatDate(t.deadline) : null,
+          deadline: t.deadline ? formatDate(t.deadline, branding.globalTimezone) : null,
           taskUrl: `${appUrl}/events/${t.checklist.event.id}`,
         })),
         overdueTasks: overdueTasks.map((t) => ({
           title: t.title,
           eventTitle: t.checklist.event.title,
           priority: t.priority,
-          deadline: t.deadline ? formatDate(t.deadline) : null,
+          deadline: t.deadline ? formatDate(t.deadline, branding.globalTimezone) : null,
           taskUrl: `${appUrl}/events/${t.checklist.event.id}`,
         })),
         upcomingEvents: upcomingEvents.map((e) => ({
           title: e.title,
-          date: formatDateTime(e.date),
-          endDate: formatDateTime(e.endDate),
+          date: formatDateTime(e.date, branding.globalTimezone),
+          endDate: formatDateTime(e.endDate, branding.globalTimezone),
           venue: e.venue,
           eventUrl: `${appUrl}/events/${e.id}`,
         })),

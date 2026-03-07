@@ -9,7 +9,8 @@ import { Calendar, Mic2, Users, ClipboardCheck, Plus, ArrowRight, AlertTriangle,
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-import { formatDate, formatDateTime, formatTimeAgo } from "@/lib/utils";
+import { formatDate, formatDateTime, formatTimeAgo, formatRelativeDate } from "@/lib/utils";
+import { useAppSettings } from "@/lib/app-settings-context";
 
 const ROLE_LEVEL: Record<string, number> = { VIEWER: 0, VOLUNTEER: 1, EVENT_LEAD: 2, ADMIN: 3, SUPER_ADMIN: 4 };
 
@@ -77,6 +78,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
+
+  const { globalTimezone } = useAppSettings();
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -235,7 +238,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-3 mt-1.5">
                       <span className="text-xs text-muted flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {formatDateTime(nextEvent.date)}
+                        {formatDateTime(nextEvent.date, globalTimezone)}
                       </span>
                       {nextEvent.venue && (
                         <span className="text-xs text-muted">{nextEvent.venue}</span>
@@ -372,7 +375,7 @@ export default function DashboardPage() {
                     <PriorityBadge priority={task.priority as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"} />
                     <StatusBadge type="task" status={task.status} />
                     <span className="text-[11px] font-[family-name:var(--font-mono)] text-muted w-20 text-right shrink-0">
-                      {task.deadline ? formatDate(task.deadline) : "—"}
+                      {task.deadline ? formatDate(task.deadline, globalTimezone) : "—"}
                     </span>
                   </div>
                 ))
@@ -400,7 +403,7 @@ export default function DashboardPage() {
                     <OwnerAvatar name={item.owner} size="sm" />
                     <span className="flex-1 truncate">{item.title}</span>
                     <span className="text-[10px] font-[family-name:var(--font-mono)] text-status-blocked">
-                      {item.deadline ? formatDate(item.deadline) : "—"}
+                      {item.deadline ? formatDate(item.deadline, globalTimezone) : "—"}
                     </span>
                   </div>
                 ))

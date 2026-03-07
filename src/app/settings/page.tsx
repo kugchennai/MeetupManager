@@ -27,6 +27,8 @@ function AppConfigCard() {
     setLogoLight,
     logoDark,
     setLogoDark,
+    globalTimezone,
+    setGlobalTimezone,
   } = useAppSettings();
   const [config, setConfig] = useState({
     meetupName: "",
@@ -36,8 +38,9 @@ function AppConfigCard() {
     meetupPastEventLink: "",
     venueRequestCc: "",
     volunteerThreshold: "5",
-    minVolunteerTasks: "7", 
-    minEventDuration: "4"
+    minVolunteerTasks: "7",
+    minEventDuration: "4",
+    globalTimezone: "UTC"
   });
   const [lightPreview, setLightPreview] = useState<string | null>(null);
   const [darkPreview, setDarkPreview] = useState<string | null>(null);
@@ -57,7 +60,8 @@ function AppConfigCard() {
       meetupPastEventLink,
       venueRequestCc,
       minVolunteerTasks: String(minVolunteerTasks),
-      minEventDuration: String(minEventDuration)
+      minEventDuration: String(minEventDuration),
+      globalTimezone: globalTimezone || "UTC"
     }));
 
     // Load volunteer threshold from API
@@ -76,8 +80,8 @@ function AppConfigCard() {
           setConfig(prev => ({ ...prev, volunteerThreshold: data.volunteer_promotion_threshold }));
         }
       })
-      .catch(() => {});
-  }, [meetupName, meetupWebsite, meetupPastEventLink, venueRequestCc, minVolunteerTasks, minEventDuration]);
+      .catch(() => { });
+  }, [meetupName, meetupWebsite, meetupPastEventLink, venueRequestCc, minVolunteerTasks, minEventDuration, globalTimezone]);
 
   useEffect(() => {
     setLightPreview(logoLight);
@@ -101,7 +105,8 @@ function AppConfigCard() {
       key === "codeOfConductContent" ||
       key === "meetupWebsite" ||
       key === "meetupPastEventLink" ||
-      key === "venueRequestCc"
+      key === "venueRequestCc" ||
+      key === "globalTimezone"
     ) {
       value = value.trim();
     } else if (['volunteerThreshold', 'minVolunteerTasks', 'minEventDuration'].includes(key)) {
@@ -119,7 +124,7 @@ function AppConfigCard() {
     setSaving(prev => ({ ...prev, [key]: true }));
     setErrors(prev => ({ ...prev, [key]: "" }));
     setSaved(prev => ({ ...prev, [key]: false }));
-    
+
     try {
       const apiKey = {
         meetupName: 'meetup_name',
@@ -130,15 +135,16 @@ function AppConfigCard() {
         venueRequestCc: "venue_request_cc",
         volunteerThreshold: 'volunteer_promotion_threshold',
         minVolunteerTasks: 'min_volunteer_tasks',
-        minEventDuration: 'min_event_duration'
-      }[key];
+        minEventDuration: 'min_event_duration',
+        globalTimezone: 'global_timezone'
+      }[key] || key;
 
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: apiKey, value }),
       });
-      
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Failed to save");
@@ -313,7 +319,7 @@ function AppConfigCard() {
 
   return (
     <div className="bg-surface border border-border rounded-xl p-6">
-      <div 
+      <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
@@ -336,79 +342,35 @@ function AppConfigCard() {
 
       {isExpanded && (
         <div className="mt-6 space-y-6">
-        {/* Meetup Name */}
-        <div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-[320px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Meetup Name
-              </label>
-              <input
-                type="text"
-                value={config.meetupName}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, meetupName: e.target.value }));
-                  setSaved(prev => ({ ...prev, meetupName: false }));
-                }}
-                placeholder="e.g. React Bangalore"
-                className={INPUT_CLASS}
-              />
-            </div>
-            <Button
-              size="md"
-              onClick={() => handleSave('meetupName', config.meetupName, setMeetupName)}
-              disabled={saving.meetupName}
-              className={cn(saved.meetupName && "bg-status-done/15 text-status-done border-status-done/20")}
-            >
-              {saved.meetupName ? (
-                <>
-                  <Check className="h-4 w-4" /> Saved
-                </>
-              ) : saving.meetupName ? (
-                "Saving…"
-              ) : (
-                <>
-                  <Save className="h-4 w-4" /> Save
-                </>
-              )}
-            </Button>
-          </div>
-          {errors.meetupName && <p className="mt-2 text-sm text-status-blocked">{errors.meetupName}</p>}
-        </div>
-
-        {/* Meetup Group Description */}
-        <div>
-          <div className="flex flex-col gap-3">
-            <div className="max-w-[640px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Meetup Group Description
-              </label>
-              <textarea
-                value={config.meetupDescription}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, meetupDescription: e.target.value }));
-                  setSaved(prev => ({ ...prev, meetupDescription: false }));
-                }}
-                placeholder="Share what your meetup group is about, who it is for, and what members can expect."
-                rows={4}
-                className={INPUT_CLASS}
-              />
-              <p className="mt-1 text-xs text-muted">
-                Optional. This can be shown on public or onboarding pages.
-              </p>
-            </div>
-            <div>
+          {/* Meetup Name */}
+          <div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[320px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Meetup Name
+                </label>
+                <input
+                  type="text"
+                  value={config.meetupName}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, meetupName: e.target.value }));
+                    setSaved(prev => ({ ...prev, meetupName: false }));
+                  }}
+                  placeholder="e.g. React Bangalore"
+                  className={INPUT_CLASS}
+                />
+              </div>
               <Button
                 size="md"
-                onClick={() => handleSave("meetupDescription", config.meetupDescription)}
-                disabled={saving.meetupDescription}
-                className={cn(saved.meetupDescription && "bg-status-done/15 text-status-done border-status-done/20")}
+                onClick={() => handleSave('meetupName', config.meetupName, setMeetupName)}
+                disabled={saving.meetupName}
+                className={cn(saved.meetupName && "bg-status-done/15 text-status-done border-status-done/20")}
               >
-                {saved.meetupDescription ? (
+                {saved.meetupName ? (
                   <>
                     <Check className="h-4 w-4" /> Saved
                   </>
-                ) : saving.meetupDescription ? (
+                ) : saving.meetupName ? (
                   "Saving…"
                 ) : (
                   <>
@@ -417,44 +379,40 @@ function AppConfigCard() {
                 )}
               </Button>
             </div>
+            {errors.meetupName && <p className="mt-2 text-sm text-status-blocked">{errors.meetupName}</p>}
           </div>
-          {errors.meetupDescription && <p className="mt-2 text-sm text-status-blocked">{errors.meetupDescription}</p>}
-        </div>
 
-        {/* Public Code of Conduct */}
-        <div>
-          <div className="flex flex-col gap-3">
-            <div className="max-w-[720px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Public Code of Conduct
-              </label>
-              <textarea
-                value={config.codeOfConductContent}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, codeOfConductContent: e.target.value }));
-                  setSaved(prev => ({ ...prev, codeOfConductContent: false }));
-                }}
-                placeholder="<h2>Our Code of Conduct</h2><p>Write policy content using HTML tags like h2, p, ul, li, a, strong.</p>"
-                rows={10}
-                className={INPUT_CLASS}
-              />
-              <p className="mt-1 text-xs text-muted flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5" />
-                HTML content is shown on <span className="font-mono text-[11px]">/docs/code-of-conduct</span> for public visitors and logged-in users.
-              </p>
-            </div>
-            <div>
+          {/* Global Timezone */}
+          <div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[320px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Global Timezone
+                </label>
+                <select
+                  value={config.globalTimezone}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, globalTimezone: e.target.value }));
+                    setSaved(prev => ({ ...prev, globalTimezone: false }));
+                  }}
+                  className={INPUT_CLASS}
+                >
+                  {Intl.supportedValuesOf('timeZone').map(tz => (
+                    <option key={tz} value={tz}>{tz}</option>
+                  ))}
+                </select>
+              </div>
               <Button
                 size="md"
-                onClick={() => handleSave("codeOfConductContent", config.codeOfConductContent)}
-                disabled={saving.codeOfConductContent}
-                className={cn(saved.codeOfConductContent && "bg-status-done/15 text-status-done border-status-done/20")}
+                onClick={() => handleSave('globalTimezone', config.globalTimezone, setGlobalTimezone)}
+                disabled={saving.globalTimezone}
+                className={cn(saved.globalTimezone && "bg-status-done/15 text-status-done border-status-done/20")}
               >
-                {saved.codeOfConductContent ? (
+                {saved.globalTimezone ? (
                   <>
                     <Check className="h-4 w-4" /> Saved
                   </>
-                ) : saving.codeOfConductContent ? (
+                ) : saving.globalTimezone ? (
                   "Saving…"
                 ) : (
                   <>
@@ -463,299 +421,389 @@ function AppConfigCard() {
                 )}
               </Button>
             </div>
+            {errors.globalTimezone && <p className="mt-2 text-sm text-status-blocked">{errors.globalTimezone}</p>}
           </div>
-          {errors.codeOfConductContent && <p className="mt-2 text-sm text-status-blocked">{errors.codeOfConductContent}</p>}
-        </div>
 
-        {/* Meetup Website */}
-        <div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-[480px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Meetup Website
-              </label>
-              <input
-                type="url"
-                value={config.meetupWebsite}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, meetupWebsite: e.target.value }));
-                  setSaved(prev => ({ ...prev, meetupWebsite: false }));
-                }}
-                placeholder="https://example.com"
-                className={INPUT_CLASS}
-              />
+          {/* Meetup Group Description */}
+          <div>
+            <div className="flex flex-col gap-3">
+              <div className="max-w-[640px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Meetup Group Description
+                </label>
+                <textarea
+                  value={config.meetupDescription}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, meetupDescription: e.target.value }));
+                    setSaved(prev => ({ ...prev, meetupDescription: false }));
+                  }}
+                  placeholder="Share what your meetup group is about, who it is for, and what members can expect."
+                  rows={4}
+                  className={INPUT_CLASS}
+                />
+                <p className="mt-1 text-xs text-muted">
+                  Optional. This can be shown on public or onboarding pages.
+                </p>
+              </div>
+              <div>
+                <Button
+                  size="md"
+                  onClick={() => handleSave("meetupDescription", config.meetupDescription)}
+                  disabled={saving.meetupDescription}
+                  className={cn(saved.meetupDescription && "bg-status-done/15 text-status-done border-status-done/20")}
+                >
+                  {saved.meetupDescription ? (
+                    <>
+                      <Check className="h-4 w-4" /> Saved
+                    </>
+                  ) : saving.meetupDescription ? (
+                    "Saving…"
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" /> Save
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-            <Button
-              size="md"
-              onClick={() => handleSave("meetupWebsite", config.meetupWebsite)}
-              disabled={saving.meetupWebsite}
-              className={cn(saved.meetupWebsite && "bg-status-done/15 text-status-done border-status-done/20")}
-            >
-              {saved.meetupWebsite ? (
-                <>
-                  <Check className="h-4 w-4" /> Saved
-                </>
-              ) : saving.meetupWebsite ? (
-                "Saving…"
-              ) : (
-                <>
-                  <Save className="h-4 w-4" /> Save
-                </>
-              )}
-            </Button>
+            {errors.meetupDescription && <p className="mt-2 text-sm text-status-blocked">{errors.meetupDescription}</p>}
           </div>
-          {errors.meetupWebsite && <p className="mt-2 text-sm text-status-blocked">{errors.meetupWebsite}</p>}
-        </div>
 
-        {/* Past Event Link */}
-        <div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-[640px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Past Event Link
-              </label>
-              <input
-                type="url"
-                value={config.meetupPastEventLink}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, meetupPastEventLink: e.target.value }));
-                  setSaved(prev => ({ ...prev, meetupPastEventLink: false }));
-                }}
-                placeholder="https://example.com/past-events/event-42"
-                className={INPUT_CLASS}
-              />
+          {/* Public Code of Conduct */}
+          <div>
+            <div className="flex flex-col gap-3">
+              <div className="max-w-[720px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Public Code of Conduct
+                </label>
+                <textarea
+                  value={config.codeOfConductContent}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, codeOfConductContent: e.target.value }));
+                    setSaved(prev => ({ ...prev, codeOfConductContent: false }));
+                  }}
+                  placeholder="<h2>Our Code of Conduct</h2><p>Write policy content using HTML tags like h2, p, ul, li, a, strong.</p>"
+                  rows={10}
+                  className={INPUT_CLASS}
+                />
+                <p className="mt-1 text-xs text-muted flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5" />
+                  HTML content is shown on <span className="font-mono text-[11px]">/docs/code-of-conduct</span> for public visitors and logged-in users.
+                </p>
+              </div>
+              <div>
+                <Button
+                  size="md"
+                  onClick={() => handleSave("codeOfConductContent", config.codeOfConductContent)}
+                  disabled={saving.codeOfConductContent}
+                  className={cn(saved.codeOfConductContent && "bg-status-done/15 text-status-done border-status-done/20")}
+                >
+                  {saved.codeOfConductContent ? (
+                    <>
+                      <Check className="h-4 w-4" /> Saved
+                    </>
+                  ) : saving.codeOfConductContent ? (
+                    "Saving…"
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" /> Save
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-            <Button
-              size="md"
-              onClick={() => handleSave("meetupPastEventLink", config.meetupPastEventLink)}
-              disabled={saving.meetupPastEventLink}
-              className={cn(saved.meetupPastEventLink && "bg-status-done/15 text-status-done border-status-done/20")}
-            >
-              {saved.meetupPastEventLink ? (
-                <>
-                  <Check className="h-4 w-4" /> Saved
-                </>
-              ) : saving.meetupPastEventLink ? (
-                "Saving…"
-              ) : (
-                <>
-                  <Save className="h-4 w-4" /> Save
-                </>
-              )}
-            </Button>
+            {errors.codeOfConductContent && <p className="mt-2 text-sm text-status-blocked">{errors.codeOfConductContent}</p>}
           </div>
-          {errors.meetupPastEventLink && <p className="mt-2 text-sm text-status-blocked">{errors.meetupPastEventLink}</p>}
-        </div>
 
-        {/* Default Venue Request CC */}
-        <div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-[640px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Default Venue Request CC Emails
-              </label>
-              <input
-                type="text"
-                value={config.venueRequestCc}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, venueRequestCc: e.target.value }));
-                  setSaved(prev => ({ ...prev, venueRequestCc: false }));
-                }}
-                placeholder="ops@example.com, lead@example.com"
-                className={INPUT_CLASS}
-              />
-              <p className="mt-1 text-xs text-muted">
-                Optional. Comma-separated emails automatically added in venue request drafts.
+          {/* Meetup Website */}
+          <div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[480px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Meetup Website
+                </label>
+                <input
+                  type="url"
+                  value={config.meetupWebsite}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, meetupWebsite: e.target.value }));
+                    setSaved(prev => ({ ...prev, meetupWebsite: false }));
+                  }}
+                  placeholder="https://example.com"
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <Button
+                size="md"
+                onClick={() => handleSave("meetupWebsite", config.meetupWebsite)}
+                disabled={saving.meetupWebsite}
+                className={cn(saved.meetupWebsite && "bg-status-done/15 text-status-done border-status-done/20")}
+              >
+                {saved.meetupWebsite ? (
+                  <>
+                    <Check className="h-4 w-4" /> Saved
+                  </>
+                ) : saving.meetupWebsite ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+            {errors.meetupWebsite && <p className="mt-2 text-sm text-status-blocked">{errors.meetupWebsite}</p>}
+          </div>
+
+          {/* Past Event Link */}
+          <div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[640px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Past Event Link
+                </label>
+                <input
+                  type="url"
+                  value={config.meetupPastEventLink}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, meetupPastEventLink: e.target.value }));
+                    setSaved(prev => ({ ...prev, meetupPastEventLink: false }));
+                  }}
+                  placeholder="https://example.com/past-events/event-42"
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <Button
+                size="md"
+                onClick={() => handleSave("meetupPastEventLink", config.meetupPastEventLink)}
+                disabled={saving.meetupPastEventLink}
+                className={cn(saved.meetupPastEventLink && "bg-status-done/15 text-status-done border-status-done/20")}
+              >
+                {saved.meetupPastEventLink ? (
+                  <>
+                    <Check className="h-4 w-4" /> Saved
+                  </>
+                ) : saving.meetupPastEventLink ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+            {errors.meetupPastEventLink && <p className="mt-2 text-sm text-status-blocked">{errors.meetupPastEventLink}</p>}
+          </div>
+
+          {/* Default Venue Request CC */}
+          <div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[640px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Default Venue Request CC Emails
+                </label>
+                <input
+                  type="text"
+                  value={config.venueRequestCc}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, venueRequestCc: e.target.value }));
+                    setSaved(prev => ({ ...prev, venueRequestCc: false }));
+                  }}
+                  placeholder="ops@example.com, lead@example.com"
+                  className={INPUT_CLASS}
+                />
+                <p className="mt-1 text-xs text-muted">
+                  Optional. Comma-separated emails automatically added in venue request drafts.
+                </p>
+              </div>
+              <Button
+                size="md"
+                onClick={() => handleSave("venueRequestCc", config.venueRequestCc, setVenueRequestCc)}
+                disabled={saving.venueRequestCc}
+                className={cn(saved.venueRequestCc && "bg-status-done/15 text-status-done border-status-done/20")}
+              >
+                {saved.venueRequestCc ? (
+                  <>
+                    <Check className="h-4 w-4" /> Saved
+                  </>
+                ) : saving.venueRequestCc ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+            {errors.venueRequestCc && <p className="mt-2 text-sm text-status-blocked">{errors.venueRequestCc}</p>}
+          </div>
+
+          {/* Min Event Duration */}
+          <div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[200px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Minimum Event Duration (hours)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={168}
+                  value={config.minEventDuration}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, minEventDuration: e.target.value }));
+                    setSaved(prev => ({ ...prev, minEventDuration: false }));
+                  }}
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <Button
+                size="md"
+                onClick={() => handleSave('minEventDuration', config.minEventDuration, (v) => setMinEventDuration(parseInt(v, 10)))}
+                disabled={saving.minEventDuration}
+                className={cn(saved.minEventDuration && "bg-status-done/15 text-status-done border-status-done/20")}
+              >
+                {saved.minEventDuration ? (
+                  <>
+                    <Check className="h-4 w-4" /> Saved
+                  </>
+                ) : saving.minEventDuration ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+            {errors.minEventDuration && <p className="mt-2 text-sm text-status-blocked">{errors.minEventDuration}</p>}
+          </div>
+
+          {/* Volunteer Promotion Threshold */}
+          <div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[200px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Volunteer Promotion (min events)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={config.volunteerThreshold}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, volunteerThreshold: e.target.value }));
+                    setSaved(prev => ({ ...prev, volunteerThreshold: false }));
+                  }}
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <Button
+                size="md"
+                onClick={() => handleSave('volunteerThreshold', config.volunteerThreshold)}
+                disabled={saving.volunteerThreshold}
+                className={cn(saved.volunteerThreshold && "bg-status-done/15 text-status-done border-status-done/20")}
+              >
+                {saved.volunteerThreshold ? (
+                  <>
+                    <Check className="h-4 w-4" /> Saved
+                  </>
+                ) : saving.volunteerThreshold ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+            {errors.volunteerThreshold && <p className="mt-2 text-sm text-status-blocked">{errors.volunteerThreshold}</p>}
+          </div>
+
+          {/* Min Volunteer Tasks */}
+          <div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1 max-w-[200px]">
+                <label className="block text-sm font-medium mb-1.5">
+                  Minimum Volunteer Tasks
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={config.minVolunteerTasks}
+                  onChange={(e) => {
+                    setConfig(prev => ({ ...prev, minVolunteerTasks: e.target.value }));
+                    setSaved(prev => ({ ...prev, minVolunteerTasks: false }));
+                  }}
+                  className={INPUT_CLASS}
+                />
+              </div>
+              <Button
+                size="md"
+                onClick={() => handleSave('minVolunteerTasks', config.minVolunteerTasks, (v) => setMinVolunteerTasks(parseInt(v, 10)))}
+                disabled={saving.minVolunteerTasks}
+                className={cn(saved.minVolunteerTasks && "bg-status-done/15 text-status-done border-status-done/20")}
+              >
+                {saved.minVolunteerTasks ? (
+                  <>
+                    <Check className="h-4 w-4" /> Saved
+                  </>
+                ) : saving.minVolunteerTasks ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> Save
+                  </>
+                )}
+              </Button>
+            </div>
+            {errors.minVolunteerTasks && <p className="mt-2 text-sm text-status-blocked">{errors.minVolunteerTasks}</p>}
+          </div>
+
+          {/* Group Logo */}
+          <div>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-accent/10 text-accent">
+                <ImagePlus className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Group Logo</h4>
+                <p className="text-sm text-muted">
+                  Upload your group&apos;s logo for light and dark themes. The light logo will be used in email headers.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              {renderUploadZone("logo_light", "Light Logo (for dark backgrounds)", lightPreview, lightInputRef, "bg-gray-900")}
+              {renderUploadZone("logo_dark", "Dark Logo (for light backgrounds)", darkPreview, darkInputRef, "bg-gray-100 dark:bg-gray-100")}
+            </div>
+            {errors.logoUpload && (
+              <p className="mt-3 text-sm text-status-blocked">{errors.logoUpload}</p>
+            )}
+          </div>
+
+          {/* Discord Integration */}
+          <div>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-accent/10 text-accent">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="font-medium mb-1 flex items-center gap-2">
+                  Discord Integration
+                  <span className="px-2 py-1 text-xs bg-muted/20 text-muted rounded-md">Coming Soon</span>
+                </h4>
+                <p className="text-sm text-muted">
+                  Bot and notification channels will be configurable here in a future release.
+                </p>
+              </div>
+            </div>
+            <div className="p-4 bg-muted/10 border border-dashed border-muted/30 rounded-lg">
+              <p className="text-sm text-muted text-center">
+                Discord integration settings will be available here soon
               </p>
             </div>
-            <Button
-              size="md"
-              onClick={() => handleSave("venueRequestCc", config.venueRequestCc, setVenueRequestCc)}
-              disabled={saving.venueRequestCc}
-              className={cn(saved.venueRequestCc && "bg-status-done/15 text-status-done border-status-done/20")}
-            >
-              {saved.venueRequestCc ? (
-                <>
-                  <Check className="h-4 w-4" /> Saved
-                </>
-              ) : saving.venueRequestCc ? (
-                "Saving…"
-              ) : (
-                <>
-                  <Save className="h-4 w-4" /> Save
-                </>
-              )}
-            </Button>
-          </div>
-          {errors.venueRequestCc && <p className="mt-2 text-sm text-status-blocked">{errors.venueRequestCc}</p>}
-        </div>
-
-        {/* Min Event Duration */}
-        <div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-[200px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Minimum Event Duration (hours)
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={168}
-                value={config.minEventDuration}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, minEventDuration: e.target.value }));
-                  setSaved(prev => ({ ...prev, minEventDuration: false }));
-                }}
-                className={INPUT_CLASS}
-              />
-            </div>
-            <Button
-              size="md"
-              onClick={() => handleSave('minEventDuration', config.minEventDuration, (v) => setMinEventDuration(parseInt(v, 10)))}
-              disabled={saving.minEventDuration}
-              className={cn(saved.minEventDuration && "bg-status-done/15 text-status-done border-status-done/20")}
-            >
-              {saved.minEventDuration ? (
-                <>
-                  <Check className="h-4 w-4" /> Saved
-                </>
-              ) : saving.minEventDuration ? (
-                "Saving…"
-              ) : (
-                <>
-                  <Save className="h-4 w-4" /> Save
-                </>
-              )}
-            </Button>
-          </div>
-          {errors.minEventDuration && <p className="mt-2 text-sm text-status-blocked">{errors.minEventDuration}</p>}
-        </div>
-
-        {/* Volunteer Promotion Threshold */}
-        <div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-[200px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Volunteer Promotion (min events)
-              </label>
-              <input
-                type="number"
-                min={1}
-                value={config.volunteerThreshold}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, volunteerThreshold: e.target.value }));
-                  setSaved(prev => ({ ...prev, volunteerThreshold: false }));
-                }}
-                className={INPUT_CLASS}
-              />
-            </div>
-            <Button
-              size="md"
-              onClick={() => handleSave('volunteerThreshold', config.volunteerThreshold)}
-              disabled={saving.volunteerThreshold}
-              className={cn(saved.volunteerThreshold && "bg-status-done/15 text-status-done border-status-done/20")}
-            >
-              {saved.volunteerThreshold ? (
-                <>
-                  <Check className="h-4 w-4" /> Saved
-                </>
-              ) : saving.volunteerThreshold ? (
-                "Saving…"
-              ) : (
-                <>
-                  <Save className="h-4 w-4" /> Save
-                </>
-              )}
-            </Button>
-          </div>
-          {errors.volunteerThreshold && <p className="mt-2 text-sm text-status-blocked">{errors.volunteerThreshold}</p>}
-        </div>
-
-        {/* Min Volunteer Tasks */}
-        <div>
-          <div className="flex items-end gap-3">
-            <div className="flex-1 max-w-[200px]">
-              <label className="block text-sm font-medium mb-1.5">
-                Minimum Volunteer Tasks
-              </label>
-              <input
-                type="number"
-                min={1}
-                value={config.minVolunteerTasks}
-                onChange={(e) => {
-                  setConfig(prev => ({ ...prev, minVolunteerTasks: e.target.value }));
-                  setSaved(prev => ({ ...prev, minVolunteerTasks: false }));
-                }}
-                className={INPUT_CLASS}
-              />
-            </div>
-            <Button
-              size="md"
-              onClick={() => handleSave('minVolunteerTasks', config.minVolunteerTasks, (v) => setMinVolunteerTasks(parseInt(v, 10)))}
-              disabled={saving.minVolunteerTasks}
-              className={cn(saved.minVolunteerTasks && "bg-status-done/15 text-status-done border-status-done/20")}
-            >
-              {saved.minVolunteerTasks ? (
-                <>
-                  <Check className="h-4 w-4" /> Saved
-                </>
-              ) : saving.minVolunteerTasks ? (
-                "Saving…"
-              ) : (
-                <>
-                  <Save className="h-4 w-4" /> Save
-                </>
-              )}
-            </Button>
-          </div>
-          {errors.minVolunteerTasks && <p className="mt-2 text-sm text-status-blocked">{errors.minVolunteerTasks}</p>}
-        </div>
-
-        {/* Group Logo */}
-        <div>
-          <div className="flex items-start gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-accent/10 text-accent">
-              <ImagePlus className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="font-medium mb-1">Group Logo</h4>
-              <p className="text-sm text-muted">
-                Upload your group&apos;s logo for light and dark themes. The light logo will be used in email headers.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            {renderUploadZone("logo_light", "Light Logo (for dark backgrounds)", lightPreview, lightInputRef, "bg-gray-900")}
-            {renderUploadZone("logo_dark", "Dark Logo (for light backgrounds)", darkPreview, darkInputRef, "bg-gray-100 dark:bg-gray-100")}
-          </div>
-          {errors.logoUpload && (
-            <p className="mt-3 text-sm text-status-blocked">{errors.logoUpload}</p>
-          )}
-        </div>
-
-        {/* Discord Integration */}
-        <div>
-          <div className="flex items-start gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-accent/10 text-accent">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="font-medium mb-1 flex items-center gap-2">
-                Discord Integration
-                <span className="px-2 py-1 text-xs bg-muted/20 text-muted rounded-md">Coming Soon</span>
-              </h4>
-              <p className="text-sm text-muted">
-                Bot and notification channels will be configurable here in a future release.
-              </p>
-            </div>
-          </div>
-          <div className="p-4 bg-muted/10 border border-dashed border-muted/30 rounded-lg">
-            <p className="text-sm text-muted text-center">
-              Discord integration settings will be available here soon
-            </p>
           </div>
         </div>
-      </div>
       )}
     </div>
   );
@@ -870,7 +918,7 @@ function VolunteerThresholdCard() {
           setThreshold(data.volunteer_promotion_threshold);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleSave = async () => {
@@ -1085,7 +1133,7 @@ function TestEmailCard() {
       .then((data) => {
         if (data) setSmtpStatus(data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleSend = async () => {

@@ -18,25 +18,29 @@ interface AppSettingsContextValue {
   setLogoLight: (url: string | null) => void;
   logoDark: string | null;
   setLogoDark: (url: string | null) => void;
+  globalTimezone: string;
+  setGlobalTimezone: (tz: string) => void;
   loading: boolean;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextValue>({
   meetupName: "Meetup Manager",
-  setMeetupName: () => {},
+  setMeetupName: () => { },
   meetupDescription: "",
   meetupWebsite: "",
   meetupPastEventLink: "",
   venueRequestCc: "",
-  setVenueRequestCc: () => {},
+  setVenueRequestCc: () => { },
   minVolunteerTasks: 7,
-  setMinVolunteerTasks: () => {},
+  setMinVolunteerTasks: () => { },
   minEventDuration: 4,
-  setMinEventDuration: () => {},
+  setMinEventDuration: () => { },
   logoLight: null,
-  setLogoLight: () => {},
+  setLogoLight: () => { },
   logoDark: null,
-  setLogoDark: () => {},
+  setLogoDark: () => { },
+  globalTimezone: "",
+  setGlobalTimezone: () => { },
   loading: true,
 });
 
@@ -50,6 +54,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [minEventDuration, setMinEventDuration] = useState(4);
   const [logoLight, setLogoLight] = useState<string | null>(null);
   const [logoDark, setLogoDark] = useState<string | null>(null);
+  const [globalTimezone, setGlobalTimezone] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,8 +86,17 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         }
         if (data.logo_light) setLogoLight(data.logo_light);
         if (data.logo_dark) setLogoDark(data.logo_dark);
+        if ("global_timezone" in data && data.global_timezone) {
+          setGlobalTimezone(data.global_timezone);
+        } else {
+          try {
+            setGlobalTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+          } catch (e) {
+            setGlobalTimezone("UTC");
+          }
+        }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -110,6 +124,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setLogoDark(url);
   }, []);
 
+  const updateGlobalTimezone = useCallback((tz: string) => {
+    setGlobalTimezone(tz);
+  }, []);
+
   return (
     <AppSettingsContext.Provider
       value={{
@@ -128,6 +146,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         setLogoLight: updateLogoLight,
         logoDark,
         setLogoDark: updateLogoDark,
+        globalTimezone,
+        setGlobalTimezone: updateGlobalTimezone,
         loading,
       }}
     >
