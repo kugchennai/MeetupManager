@@ -19,6 +19,8 @@ interface TaskDueSoonProps {
   priority: string;
   appName?: string;
   logoUrl?: string;
+  leadPhone?: string | null;
+  adminPhone?: string | null;
 }
 
 export function TaskDueSoonEmail({
@@ -30,6 +32,8 @@ export function TaskDueSoonEmail({
   priority,
   appName,
   logoUrl,
+  leadPhone,
+  adminPhone,
 }: TaskDueSoonProps) {
   const urgencyText =
     daysRemaining <= 1
@@ -55,6 +59,8 @@ export function TaskDueSoonEmail({
         <DetailItem label="Task" value={taskTitle} />
         <DetailItem label="Event" value={eventName} />
         <DetailItem label="Priority" value={priority} />
+        {leadPhone && <DetailItem label="Lead Phone" value={leadPhone} />}
+        {adminPhone && <DetailItem label="Admin Phone" value={adminPhone} />}
         <DetailItem label="Deadline" value={deadline} />
         <DetailItem label="Time Left" value={daysRemaining <= 1 ? "Less than 1 day" : `${daysRemaining} days`} />
       </DetailTable>

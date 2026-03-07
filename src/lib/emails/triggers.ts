@@ -106,6 +106,34 @@ function brandingOptions(branding: EmailBranding, extra?: { attachments?: Array<
   };
 }
 
+async function getAdminPhone(): Promise<string | null> {
+  try {
+    const admin = await prisma.user.findFirst({
+      where: {
+        globalRole: { in: ["ADMIN", "SUPER_ADMIN"] },
+        phone: { not: null },
+        deletedAt: null,
+      },
+      select: { phone: true },
+    });
+    return admin?.phone ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function getEventLeadPhone(eventId: string): Promise<string | null> {
+  try {
+    const lead = await prisma.eventMember.findFirst({
+      where: { eventId, eventRole: "LEAD" },
+      include: { user: { select: { phone: true } } },
+    });
+    return lead?.user.phone ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── 1. Member Invitation ─────────────────────────────────────────
 
 export async function sendMemberInvitationEmail(
@@ -146,7 +174,8 @@ export async function sendVolunteerWelcomeEmail(
   volunteerName: string,
   volunteerEmail: string,
   volunteerRole: string | null,
-  inviterName: string
+  inviterName: string,
+  eventId?: string
 ): Promise<void> {
   if (!isEmailConfigured() || !volunteerEmail) return;
 
@@ -165,6 +194,8 @@ export async function sendVolunteerWelcomeEmail(
         appUrl,
         appName: branding.appName,
         logoUrl: branding.logoUrl,
+        adminPhone: await getAdminPhone(),
+        leadPhone: eventId ? await getEventLeadPhone(eventId) : null,
       }),
       brandingOptions(branding)
     );
@@ -401,6 +432,8 @@ export async function sendTaskAssignedEmail(
         assignedBy: assignedByName,
         appName: branding.appName,
         logoUrl: branding.logoUrl,
+        adminPhone: await getAdminPhone(),
+        leadPhone: await getEventLeadPhone(task.checklist.event.id),
       }),
       brandingOptions(branding)
     );
@@ -453,6 +486,8 @@ export async function sendTaskDueSoonEmail(
         priority: task.priority,
         appName: branding.appName,
         logoUrl: branding.logoUrl,
+        adminPhone: await getAdminPhone(),
+        leadPhone: await getEventLeadPhone(task.checklist.event.id),
       }),
       brandingOptions(branding)
     );
@@ -523,6 +558,8 @@ export async function sendTaskOverdueEmail(
         isEscalation: ccEventLead && (eventLeadEmails?.length ?? 0) > 0,
         appName: branding.appName,
         logoUrl: branding.logoUrl,
+        adminPhone: await getAdminPhone(),
+        leadPhone: await getEventLeadPhone(task.checklist.event.id),
       }),
       brandingOptions(branding, { cc: eventLeadEmails })
     );

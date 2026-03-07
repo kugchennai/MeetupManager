@@ -27,6 +27,7 @@ export async function GET(req: Request) {
       id: true,
       name: true,
       email: true,
+      phone: true,
       image: true,
       globalRole: true,
       createdAt: true,
@@ -88,10 +89,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { email, name, globalRole } = body;
+  const { email, name, phone, globalRole } = body;
 
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  }
+
+  if (!phone || typeof phone !== "string" || !phone.trim()) {
+    return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
   }
 
   if (!name || typeof name !== "string" || !name.trim()) {
@@ -147,6 +152,7 @@ export async function POST(req: NextRequest) {
       data: {
         deletedAt: null,
         name: name?.trim() || existing.name,
+        phone: phone.trim(),
         globalRole: role,
       },
       select: {
@@ -208,6 +214,7 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.create({
     data: {
       email: normalizedEmail,
+      phone: phone.trim(),
       name: name?.trim() || null,
       globalRole: role,
     },
@@ -215,6 +222,7 @@ export async function POST(req: NextRequest) {
       id: true,
       name: true,
       email: true,
+      phone: true,
       image: true,
       globalRole: true,
       createdAt: true,
@@ -252,7 +260,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { userId, globalRole, name } = body;
+  const { userId, globalRole, name, phone } = body;
 
   if (!userId) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
@@ -260,7 +268,7 @@ export async function PATCH(req: NextRequest) {
 
   const before = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, globalRole: true },
+    select: { name: true, globalRole: true, phone: true },
   });
 
   if (!before) {
@@ -277,6 +285,15 @@ export async function PATCH(req: NextRequest) {
     }
     data.name = name.trim();
     changes.name = { from: before.name, to: name.trim() };
+  }
+
+  // Handle phone update
+  if (phone !== undefined) {
+    if (typeof phone !== "string" || !phone.trim()) {
+      return NextResponse.json({ error: "Phone number cannot be empty" }, { status: 400 });
+    }
+    data.phone = phone.trim();
+    changes.phone = { from: before.phone, to: phone.trim() };
   }
 
   // Handle role update

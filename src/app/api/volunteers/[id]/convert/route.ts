@@ -69,7 +69,7 @@ export async function POST(
     if (existingUser.deletedAt) {
       await prismaUnfiltered.user.update({
         where: { id: existingUser.id },
-        data: { deletedAt: null, globalRole: "EVENT_LEAD" },
+        data: { deletedAt: null, globalRole: "EVENT_LEAD", phone: volunteer.phone },
       });
     } else {
       // Upgrade role to Member (EVENT_LEAD) if currently lower
@@ -108,6 +108,7 @@ export async function POST(
     data: {
       email: normalizedEmail,
       name: volunteer.name,
+      phone: volunteer.phone,
       globalRole: "EVENT_LEAD",
     },
     select: {

@@ -19,6 +19,8 @@ interface TaskOverdueProps {
   isEscalation?: boolean;
   appName?: string;
   logoUrl?: string;
+  leadPhone?: string | null;
+  adminPhone?: string | null;
 }
 
 export function TaskOverdueEmail({
@@ -31,6 +33,8 @@ export function TaskOverdueEmail({
   isEscalation = false,
   appName,
   logoUrl,
+  leadPhone,
+  adminPhone,
 }: TaskOverdueProps) {
   return (
     <EmailLayout preview={`OVERDUE: ${taskTitle} is ${overdueDays} day(s) past deadline`} appName={appName} logoUrl={logoUrl}>
@@ -62,6 +66,8 @@ export function TaskOverdueEmail({
         <DetailItem label="Priority" value={priority} />
         <DetailItem label="Deadline" value={deadline} />
         <DetailItem label="Overdue By" value={`${overdueDays} day${overdueDays !== 1 ? "s" : ""}`} />
+        {leadPhone && <DetailItem label="Lead Phone" value={leadPhone} />}
+        {adminPhone && <DetailItem label="Admin Phone" value={adminPhone} />}
       </DetailTable>
 
       <Hr style={styles.hr} />

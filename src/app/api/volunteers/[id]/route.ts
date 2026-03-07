@@ -56,16 +56,30 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const { name, email, discordId, role } = body;
+  const { name, email, phone, discordId, role } = body;
 
   const before = await prisma.volunteer.findUnique({ where: { id } });
   if (!before) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const updateData: { name?: string; email?: string | null; discordId?: string | null; role?: string | null } = {};
+  const updateData: { name?: string; email?: string | null; phone?: string | null; discordId?: string | null; role?: string | null } = {};
   if (name !== undefined) updateData.name = typeof name === "string" ? name.trim() : before.name;
-  if (email !== undefined) updateData.email = email === "" || email == null ? null : String(email).trim();
+
+  if (email !== undefined) {
+    if (typeof email !== "string" || !email.trim()) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+    updateData.email = email.trim();
+  }
+
+  if (phone !== undefined) {
+    if (typeof phone !== "string" || !phone.trim()) {
+      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+    }
+    updateData.phone = phone.trim();
+  }
+
   if (discordId !== undefined) updateData.discordId = discordId === "" || discordId == null ? null : String(discordId).trim();
   if (role !== undefined) updateData.role = role === "" || role == null ? null : String(role).trim();
 
@@ -111,8 +125,8 @@ export async function PATCH(
   });
 
   const changes = diffChanges(
-    { name: before.name, email: before.email, discordId: before.discordId, role: before.role },
-    { name: volunteer.name, email: volunteer.email, discordId: volunteer.discordId, role: volunteer.role }
+    { name: before.name, email: before.email, phone: before.phone, discordId: before.discordId, role: before.role },
+    { name: volunteer.name, email: volunteer.email, phone: volunteer.phone, discordId: volunteer.discordId, role: volunteer.role }
   );
 
   if (Object.keys(changes).length > 0) {

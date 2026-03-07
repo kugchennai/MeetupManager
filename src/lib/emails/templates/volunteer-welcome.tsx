@@ -14,6 +14,8 @@ interface VolunteerWelcomeProps {
   appUrl: string;
   appName?: string;
   logoUrl?: string;
+  leadPhone?: string | null;
+  adminPhone?: string | null;
 }
 
 export function VolunteerWelcomeEmail({
@@ -23,6 +25,8 @@ export function VolunteerWelcomeEmail({
   appUrl,
   appName,
   logoUrl,
+  leadPhone,
+  adminPhone,
 }: VolunteerWelcomeProps) {
   return (
     <EmailLayout preview={`Welcome to the team, ${name}!`} appName={appName} logoUrl={logoUrl}>
@@ -33,14 +37,14 @@ export function VolunteerWelcomeEmail({
       </Text>
 
       <Text style={styles.paragraph}>
-        You've been added as a <strong>volunteer</strong>
+        You&apos;ve been added as a <strong>volunteer</strong>
         {role ? ` (${role})` : ""} by{" "}
-        <strong>{inviterName}</strong>. We're excited to have you on the team!
+        <strong>{inviterName}</strong>. We&apos;re excited to have you on the team!
       </Text>
 
       <Hr style={styles.hr} />
 
-      <Text style={styles.h2}>What's next?</Text>
+      <Text style={styles.h2}>What&apos;s next?</Text>
 
       <div style={styles.infoBox}>
         <Text style={{ ...styles.paragraph, margin: "0 0 8px 0" }}>
@@ -53,6 +57,24 @@ export function VolunteerWelcomeEmail({
           • Keep an eye on your inbox for event reminders
         </Text>
       </div>
+
+      {(leadPhone || adminPhone) && (
+        <div style={{ ...styles.infoBox, backgroundColor: "#F9FAFB", borderColor: "#E5E7EB" }}>
+          <Text style={{ ...styles.paragraph, fontWeight: "600", color: colors.text, marginBottom: "8px" }}>
+            Contact Information
+          </Text>
+          {leadPhone && (
+            <Text style={{ ...styles.paragraph, margin: "0 0 4px 0", fontSize: "14px" }}>
+              <strong>Event Lead:</strong> {leadPhone}
+            </Text>
+          )}
+          {adminPhone && (
+            <Text style={{ ...styles.paragraph, margin: "0", fontSize: "14px" }}>
+              <strong>Admin:</strong> {adminPhone}
+            </Text>
+          )}
+        </div>
+      )}
 
       <Hr style={styles.hr} />
 

@@ -19,6 +19,8 @@ interface TaskAssignedProps {
   assignedBy?: string;
   appName?: string;
   logoUrl?: string;
+  leadPhone?: string | null;
+  adminPhone?: string | null;
 }
 
 export function TaskAssignedEmail({
@@ -30,6 +32,8 @@ export function TaskAssignedEmail({
   assignedBy,
   appName,
   logoUrl,
+  leadPhone,
+  adminPhone,
 }: TaskAssignedProps) {
   return (
     <EmailLayout preview={`New task assigned: ${taskTitle}`} appName={appName} logoUrl={logoUrl}>
@@ -50,6 +54,8 @@ export function TaskAssignedEmail({
         <DetailItem label="Event" value={eventName} />
         <DetailItem label="Priority" value={priority} />
         {deadline && <DetailItem label="Deadline" value={deadline} />}
+        {leadPhone && <DetailItem label="Lead Phone" value={leadPhone} />}
+        {adminPhone && <DetailItem label="Admin Phone" value={adminPhone} />}
       </DetailTable>
 
       <Hr style={styles.hr} />
