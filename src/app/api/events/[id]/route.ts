@@ -21,7 +21,7 @@ export async function GET(
       createdBy: { select: { id: true, name: true, image: true, email: true } },
       members: {
         include: {
-          user: { select: { id: true, name: true, image: true, email: true } },
+          user: { select: { id: true, name: true, image: true, email: true, phone: true } },
         },
       },
       speakers: {
