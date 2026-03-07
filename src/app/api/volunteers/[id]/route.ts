@@ -56,21 +56,26 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const { name, email, discordId, role } = body;
+  const { name, email, phone, discordId, role } = body;
 
   const before = await prisma.volunteer.findUnique({ where: { id } });
   if (!before) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const updateData: { name?: string; email?: string | null; discordId?: string | null; role?: string | null } = {};
+  const updateData: { name?: string; email?: string | null; phone?: string | null; discordId?: string | null; role?: string | null } = {};
   if (name !== undefined) updateData.name = typeof name === "string" ? name.trim() : before.name;
   if (email !== undefined) updateData.email = email === "" || email == null ? null : String(email).trim();
+  if (phone !== undefined) updateData.phone = phone === "" || phone == null ? null : String(phone).trim();
   if (discordId !== undefined) updateData.discordId = discordId === "" || discordId == null ? null : String(discordId).trim();
   if (role !== undefined) updateData.role = role === "" || role == null ? null : String(role).trim();
 
   if (updateData.name === "") {
     return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 });
+  }
+
+  if (email !== undefined && (!updateData.email || !updateData.email.trim())) {
+    return NextResponse.json({ error: "Email cannot be empty" }, { status: 400 });
   }
 
   // If email is being changed, validate it doesn't belong to a member (including soft-deleted)
@@ -111,8 +116,8 @@ export async function PATCH(
   });
 
   const changes = diffChanges(
-    { name: before.name, email: before.email, discordId: before.discordId, role: before.role },
-    { name: volunteer.name, email: volunteer.email, discordId: volunteer.discordId, role: volunteer.role }
+    { name: before.name, email: before.email, phone: before.phone, discordId: before.discordId, role: before.role },
+    { name: volunteer.name, email: volunteer.email, phone: volunteer.phone, discordId: volunteer.discordId, role: volunteer.role }
   );
 
   if (Object.keys(changes).length > 0) {

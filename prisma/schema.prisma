@@ -129,6 +129,7 @@ model User {
   email         String?    @unique
   emailVerified DateTime?
   image         String?
+  phone         String?
   globalRole    GlobalRole @default(VIEWER)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -223,6 +224,7 @@ model Volunteer {
   id        String   @id @default(cuid())
   name      String
   email     String?
+  phone     String?
   discordId String?
   role      String?
   userId    String?  @unique

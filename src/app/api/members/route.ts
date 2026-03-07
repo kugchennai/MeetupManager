@@ -27,6 +27,7 @@ export async function GET(req: Request) {
       id: true,
       name: true,
       email: true,
+      phone: true,
       image: true,
       globalRole: true,
       createdAt: true,
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { email, name, globalRole } = body;
+  const { email, name, phone, globalRole } = body;
 
   if (!email || typeof email !== "string") {
     return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -96,6 +97,10 @@ export async function POST(req: NextRequest) {
 
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  }
+
+  if (!phone || typeof phone !== "string" || !phone.trim()) {
+    return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -147,12 +152,14 @@ export async function POST(req: NextRequest) {
       data: {
         deletedAt: null,
         name: name?.trim() || existing.name,
+        phone: phone?.trim() || null,
         globalRole: role,
       },
       select: {
         id: true,
         name: true,
         email: true,
+        phone: true,
         image: true,
         globalRole: true,
         createdAt: true,
@@ -209,12 +216,14 @@ export async function POST(req: NextRequest) {
     data: {
       email: normalizedEmail,
       name: name?.trim() || null,
+      phone: phone?.trim() || null,
       globalRole: role,
     },
     select: {
       id: true,
       name: true,
       email: true,
+      phone: true,
       image: true,
       globalRole: true,
       createdAt: true,
@@ -252,7 +261,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { userId, globalRole, name } = body;
+  const { userId, globalRole, name, phone } = body;
 
   if (!userId) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
@@ -260,7 +269,7 @@ export async function PATCH(req: NextRequest) {
 
   const before = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, globalRole: true },
+    select: { name: true, globalRole: true, phone: true },
   });
 
   if (!before) {
@@ -277,6 +286,15 @@ export async function PATCH(req: NextRequest) {
     }
     data.name = name.trim();
     changes.name = { from: before.name, to: name.trim() };
+  }
+
+  // Handle phone update
+  if (phone !== undefined) {
+    const trimmed = typeof phone === "string" ? phone.trim() : "";
+    data.phone = trimmed || null;
+    if (trimmed !== (before.phone ?? "")) {
+      changes.phone = { from: before.phone, to: trimmed || null };
+    }
   }
 
   // Handle role update
@@ -333,6 +351,7 @@ export async function PATCH(req: NextRequest) {
       id: true,
       name: true,
       email: true,
+      phone: true,
       image: true,
       globalRole: true,
     },

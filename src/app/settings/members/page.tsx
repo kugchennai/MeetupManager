@@ -17,6 +17,7 @@ interface Member {
   id: string;
   name: string | null;
   email: string | null;
+  phone: string | null;
   image: string | null;
   globalRole: string;
   createdAt: string;
@@ -172,13 +173,14 @@ function AddMemberModal({
 }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [role, setRole] = useState("EVENT_LEAD");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !name.trim()) return;
+    if (!email.trim() || !name.trim() || !phone.trim()) return;
 
     setSaving(true);
     setError(null);
@@ -189,6 +191,7 @@ function AddMemberModal({
       body: JSON.stringify({
         email: email.trim(),
         name: name.trim() || undefined,
+        phone: phone.trim(),
         globalRole: role,
       }),
     });
@@ -198,6 +201,7 @@ function AddMemberModal({
       onAdded(member);
       setEmail("");
       setName("");
+      setPhone("");
       setRole("EVENT_LEAD");
       onClose();
     } else {
@@ -235,6 +239,17 @@ function AddMemberModal({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Full name"
+            required
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Phone *</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+1 (555) 000-0000"
             required
             className={INPUT_CLASS}
           />
@@ -446,19 +461,21 @@ function EditMemberModal({
   onUpdated: (updated: Member) => void;
 }) {
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && member) {
       setName(member.name ?? "");
+      setPhone(member.phone ?? "");
       setError(null);
     }
   }, [open, member]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!member || !name.trim()) return;
+    if (!member || !name.trim() || !phone.trim()) return;
 
     setSaving(true);
     setError(null);
@@ -466,7 +483,7 @@ function EditMemberModal({
     const res = await fetch("/api/members", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: member.id, name: name.trim() }),
+      body: JSON.stringify({ userId: member.id, name: name.trim(), phone: phone.trim() || undefined }),
     });
 
     if (res.ok) {
@@ -501,6 +518,17 @@ function EditMemberModal({
           />
         </div>
         <div>
+          <label className="block text-sm font-medium mb-1.5">Phone *</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+1 (555) 000-0000"
+            required
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
           <label className="block text-sm font-medium mb-1.5 text-muted">Email</label>
           <p className="text-sm text-muted">{member.email ?? "—"}</p>
         </div>
@@ -513,7 +541,7 @@ function EditMemberModal({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving || !name.trim()}>
+          <Button type="submit" disabled={saving || !name.trim() || !phone.trim()}>
             {saving ? "Saving…" : "Save Changes"}
           </Button>
         </div>
@@ -628,12 +656,13 @@ export default function MembersPage() {
           <div className={cn(
             "grid gap-4 px-5 py-3 border-b border-border text-[10px] font-semibold uppercase tracking-widest text-muted",
             isSuperAdmin
-              ? "grid-cols-[auto_1fr_1fr_auto_auto_auto_auto]"
-              : "grid-cols-[auto_1fr_1fr_auto_auto_auto]"
+              ? "grid-cols-[auto_1fr_1fr_1fr_auto_auto_auto_auto]"
+              : "grid-cols-[auto_1fr_1fr_1fr_auto_auto_auto]"
           )}>
             <span />
             <span>Name</span>
             <span>Email</span>
+            <span>Phone</span>
             <span>Role</span>
             <span>Events</span>
             <span>Joined</span>
@@ -650,8 +679,8 @@ export default function MembersPage() {
               className={cn(
                 "group grid gap-4 items-center px-5 py-3 border-b border-border last:border-0 hover:bg-surface-hover transition-colors",
                 isSuperAdmin
-                  ? "grid-cols-[auto_1fr_1fr_auto_auto_auto_auto]"
-                  : "grid-cols-[auto_1fr_1fr_auto_auto_auto]"
+                  ? "grid-cols-[auto_1fr_1fr_1fr_auto_auto_auto_auto]"
+                  : "grid-cols-[auto_1fr_1fr_1fr_auto_auto_auto]"
               )}
             >
               <OwnerAvatar name={member.name} image={member.image} size="md" />
@@ -666,6 +695,7 @@ export default function MembersPage() {
                 </button>
               </span>
               <span className="text-sm text-muted truncate">{member.email ?? "—"}</span>
+              <span className="text-sm text-muted truncate">{member.phone ?? "—"}</span>
               <RoleDropdown
                 currentRole={member.globalRole}
                 onSelect={(role) => updateRole(member.id, role)}

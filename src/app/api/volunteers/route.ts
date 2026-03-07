@@ -27,6 +27,7 @@ export async function GET(req: Request) {
           id: true,
           name: true,
           email: true,
+          phone: true,
           discordId: true,
           role: true,
           userId: true,
@@ -69,6 +70,7 @@ export async function GET(req: Request) {
       id: profile?.id ?? `user-${u.id}`,
       name: profile?.name ?? u.name ?? u.email ?? "Unnamed Volunteer",
       email: profile?.email ?? u.email,
+      phone: profile?.phone ?? null,
       discordId: profile?.discordId ?? null,
       role: profile?.role ?? null,
       userId: u.id,
@@ -112,11 +114,25 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, email, discordId, role } = body;
+  const { name, email, phone, discordId, role } = body;
 
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json(
       { error: "Name is required" },
+      { status: 400 }
+    );
+  }
+
+  if (!email || typeof email !== "string" || !email.trim()) {
+    return NextResponse.json(
+      { error: "Email is required" },
+      { status: 400 }
+    );
+  }
+
+  if (!phone || typeof phone !== "string" || !phone.trim()) {
+    return NextResponse.json(
+      { error: "Phone number is required" },
       { status: 400 }
     );
   }
@@ -157,6 +173,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: name.trim(),
       email: email?.trim() || null,
+      phone: phone.trim(),
       discordId: discordId?.trim() || null,
       role: role?.trim() || null,
     },
@@ -168,7 +185,7 @@ export async function POST(req: NextRequest) {
     entityType: "Volunteer",
     entityId: volunteer.id,
     entityName: volunteer.name,
-    changes: { name: volunteer.name, email: volunteer.email, discordId: volunteer.discordId, role: volunteer.role },
+    changes: { name: volunteer.name, email: volunteer.email, phone: volunteer.phone, discordId: volunteer.discordId, role: volunteer.role },
   });
 
   // Send welcome email (awaited for serverless compatibility)

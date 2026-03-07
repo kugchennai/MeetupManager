@@ -28,6 +28,7 @@ export type VolunteerMinAggregateOutputType = {
   id: string | null
   name: string | null
   email: string | null
+  phone: string | null
   discordId: string | null
   role: string | null
   userId: string | null
@@ -39,6 +40,7 @@ export type VolunteerMaxAggregateOutputType = {
   id: string | null
   name: string | null
   email: string | null
+  phone: string | null
   discordId: string | null
   role: string | null
   userId: string | null
@@ -50,6 +52,7 @@ export type VolunteerCountAggregateOutputType = {
   id: number
   name: number
   email: number
+  phone: number
   discordId: number
   role: number
   userId: number
@@ -63,6 +66,7 @@ export type VolunteerMinAggregateInputType = {
   id?: true
   name?: true
   email?: true
+  phone?: true
   discordId?: true
   role?: true
   userId?: true
@@ -74,6 +78,7 @@ export type VolunteerMaxAggregateInputType = {
   id?: true
   name?: true
   email?: true
+  phone?: true
   discordId?: true
   role?: true
   userId?: true
@@ -85,6 +90,7 @@ export type VolunteerCountAggregateInputType = {
   id?: true
   name?: true
   email?: true
+  phone?: true
   discordId?: true
   role?: true
   userId?: true
@@ -169,6 +175,7 @@ export type VolunteerGroupByOutputType = {
   id: string
   name: string
   email: string | null
+  phone: string | null
   discordId: string | null
   role: string | null
   userId: string | null
@@ -201,6 +208,7 @@ export type VolunteerWhereInput = {
   id?: Prisma.StringFilter<"Volunteer"> | string
   name?: Prisma.StringFilter<"Volunteer"> | string
   email?: Prisma.StringNullableFilter<"Volunteer"> | string | null
+  phone?: Prisma.StringNullableFilter<"Volunteer"> | string | null
   discordId?: Prisma.StringNullableFilter<"Volunteer"> | string | null
   role?: Prisma.StringNullableFilter<"Volunteer"> | string | null
   userId?: Prisma.StringNullableFilter<"Volunteer"> | string | null
@@ -215,6 +223,7 @@ export type VolunteerOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
+  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   discordId?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -233,6 +242,7 @@ export type VolunteerWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.VolunteerWhereInput | Prisma.VolunteerWhereInput[]
   name?: Prisma.StringFilter<"Volunteer"> | string
   email?: Prisma.StringNullableFilter<"Volunteer"> | string | null
+  phone?: Prisma.StringNullableFilter<"Volunteer"> | string | null
   discordId?: Prisma.StringNullableFilter<"Volunteer"> | string | null
   role?: Prisma.StringNullableFilter<"Volunteer"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Volunteer"> | Date | string
@@ -246,6 +256,7 @@ export type VolunteerOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
+  phone?: Prisma.SortOrderInput | Prisma.SortOrder
   discordId?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -263,6 +274,7 @@ export type VolunteerScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Volunteer"> | string
   name?: Prisma.StringWithAggregatesFilter<"Volunteer"> | string
   email?: Prisma.StringNullableWithAggregatesFilter<"Volunteer"> | string | null
+  phone?: Prisma.StringNullableWithAggregatesFilter<"Volunteer"> | string | null
   discordId?: Prisma.StringNullableWithAggregatesFilter<"Volunteer"> | string | null
   role?: Prisma.StringNullableWithAggregatesFilter<"Volunteer"> | string | null
   userId?: Prisma.StringNullableWithAggregatesFilter<"Volunteer"> | string | null
@@ -274,6 +286,7 @@ export type VolunteerCreateInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   createdAt?: Date | string
@@ -287,6 +300,7 @@ export type VolunteerUncheckedCreateInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   userId?: string | null
@@ -300,6 +314,7 @@ export type VolunteerUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -313,6 +328,7 @@ export type VolunteerUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -326,6 +342,7 @@ export type VolunteerCreateManyInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   userId?: string | null
@@ -337,6 +354,7 @@ export type VolunteerUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -347,6 +365,7 @@ export type VolunteerUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -363,6 +382,7 @@ export type VolunteerCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
   discordId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   userId?: Prisma.SortOrder
@@ -374,6 +394,7 @@ export type VolunteerMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
   discordId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   userId?: Prisma.SortOrder
@@ -385,6 +406,7 @@ export type VolunteerMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  phone?: Prisma.SortOrder
   discordId?: Prisma.SortOrder
   role?: Prisma.SortOrder
   userId?: Prisma.SortOrder
@@ -463,6 +485,7 @@ export type VolunteerCreateWithoutUserInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   createdAt?: Date | string
@@ -475,6 +498,7 @@ export type VolunteerUncheckedCreateWithoutUserInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   createdAt?: Date | string
@@ -503,6 +527,7 @@ export type VolunteerUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -515,6 +540,7 @@ export type VolunteerUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -527,6 +553,7 @@ export type VolunteerCreateWithoutEventsInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   createdAt?: Date | string
@@ -539,6 +566,7 @@ export type VolunteerUncheckedCreateWithoutEventsInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   userId?: string | null
@@ -567,6 +595,7 @@ export type VolunteerUpdateWithoutEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -579,6 +608,7 @@ export type VolunteerUncheckedUpdateWithoutEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -591,6 +621,7 @@ export type VolunteerCreateWithoutAssignedTasksInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   createdAt?: Date | string
@@ -603,6 +634,7 @@ export type VolunteerUncheckedCreateWithoutAssignedTasksInput = {
   id?: string
   name: string
   email?: string | null
+  phone?: string | null
   discordId?: string | null
   role?: string | null
   userId?: string | null
@@ -631,6 +663,7 @@ export type VolunteerUpdateWithoutAssignedTasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -643,6 +676,7 @@ export type VolunteerUncheckedUpdateWithoutAssignedTasksInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   discordId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -695,6 +729,7 @@ export type VolunteerSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   id?: boolean
   name?: boolean
   email?: boolean
+  phone?: boolean
   discordId?: boolean
   role?: boolean
   userId?: boolean
@@ -710,6 +745,7 @@ export type VolunteerSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   id?: boolean
   name?: boolean
   email?: boolean
+  phone?: boolean
   discordId?: boolean
   role?: boolean
   userId?: boolean
@@ -722,6 +758,7 @@ export type VolunteerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   id?: boolean
   name?: boolean
   email?: boolean
+  phone?: boolean
   discordId?: boolean
   role?: boolean
   userId?: boolean
@@ -734,6 +771,7 @@ export type VolunteerSelectScalar = {
   id?: boolean
   name?: boolean
   email?: boolean
+  phone?: boolean
   discordId?: boolean
   role?: boolean
   userId?: boolean
@@ -741,7 +779,7 @@ export type VolunteerSelectScalar = {
   updatedAt?: boolean
 }
 
-export type VolunteerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "discordId" | "role" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["volunteer"]>
+export type VolunteerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "phone" | "discordId" | "role" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["volunteer"]>
 export type VolunteerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Volunteer$userArgs<ExtArgs>
   events?: boolean | Prisma.Volunteer$eventsArgs<ExtArgs>
@@ -766,6 +804,7 @@ export type $VolunteerPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     id: string
     name: string
     email: string | null
+    phone: string | null
     discordId: string | null
     role: string | null
     userId: string | null
@@ -1200,6 +1239,7 @@ export interface VolunteerFieldRefs {
   readonly id: Prisma.FieldRef<"Volunteer", 'String'>
   readonly name: Prisma.FieldRef<"Volunteer", 'String'>
   readonly email: Prisma.FieldRef<"Volunteer", 'String'>
+  readonly phone: Prisma.FieldRef<"Volunteer", 'String'>
   readonly discordId: Prisma.FieldRef<"Volunteer", 'String'>
   readonly role: Prisma.FieldRef<"Volunteer", 'String'>
   readonly userId: Prisma.FieldRef<"Volunteer", 'String'>

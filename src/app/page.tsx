@@ -2,14 +2,54 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Zap } from "lucide-react";
 import { Button } from "@/components/design-system";
+import Image from "next/image";
+
+interface PublicSettings {
+  meetupName: string;
+  logoLight: string | null;
+  logoDark: string | null;
+}
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const callbackError = searchParams.get("error");
   const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState<PublicSettings>({
+    meetupName: "Meetup Manager",
+    logoLight: null,
+    logoDark: null,
+  });
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/settings/public")
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data: Partial<PublicSettings>) => {
+        setSettings((prev) => ({
+          meetupName: data.meetupName ?? prev.meetupName,
+          logoLight: data.logoLight ?? null,
+          logoDark: data.logoDark ?? null,
+        }));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(() => {
+      setIsDark(root.classList.contains("dark"));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const logo = isDark
+    ? (settings.logoLight ?? settings.logoDark)
+    : (settings.logoDark ?? settings.logoLight);
 
   const errorMessage =
     callbackError === "AccessDenied"
@@ -27,11 +67,24 @@ function LoginContent() {
 
       <div className="relative z-10 w-full max-w-sm mx-auto px-6">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-accent to-amber-600 mb-4">
-            <Zap className="h-7 w-7 text-accent-fg" />
-          </div>
+          {logo ? (
+            <div className="flex justify-center mb-4">
+              <Image
+                src={logo}
+                alt={settings.meetupName}
+                width={72}
+                height={72}
+                className="h-18 w-auto object-contain"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-accent to-amber-600 mb-4">
+              <Zap className="h-7 w-7 text-accent-fg" />
+            </div>
+          )}
           <h1 className="text-2xl font-bold font-[family-name:var(--font-display)] tracking-tight">
-            Meetup Manager
+            {settings.meetupName}
           </h1>
           <p className="text-sm text-muted mt-1">
             Sign in to manage your community events

@@ -11,6 +11,7 @@ interface Volunteer {
   id: string;
   name: string;
   email: string | null;
+  phone: string | null;
   discordId: string | null;
   role: string | null;
   userId: string | null;
@@ -38,6 +39,7 @@ function VolunteerFormModal({
 }) {
   const [name, setName] = useState(volunteer?.name ?? "");
   const [email, setEmail] = useState(volunteer?.email ?? "");
+  const [phone, setPhone] = useState(volunteer?.phone ?? "");
   const [discordId, setDiscordId] = useState(volunteer?.discordId ?? "");
   const [role, setRole] = useState(volunteer?.role ?? "");
   const [submitting, setSubmitting] = useState(false);
@@ -52,13 +54,22 @@ function VolunteerFormModal({
       setError("Name is required");
       return;
     }
+    if (!email.trim()) {
+      setError("Email is required");
+      return;
+    }
+    if (!phone.trim()) {
+      setError("Phone number is required");
+      return;
+    }
     setSubmitting(true);
     try {
       const url = isEdit ? `/api/volunteers/${volunteer.id}` : "/api/volunteers";
       const method = isEdit ? "PATCH" : "POST";
       const body = {
         name: name.trim(),
-        email: email.trim() || undefined,
+        ...(isEdit ? {} : { email: email.trim() || undefined }),
+        phone: phone.trim() || undefined,
         discordId: discordId.trim() || undefined,
         role: role.trim() || undefined,
       };
@@ -113,13 +124,35 @@ function VolunteerFormModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Email {!isEdit && <span className="text-status-blocked">*</span>}
+          </label>
+          {isEdit ? (
+            <p className="text-sm text-muted px-3.5 py-2.5 bg-surface-hover border border-border rounded-lg">
+              {email || "—"}
+            </p>
+          ) : (
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="volunteer@example.com"
+              className={inputClassName}
+              required
+            />
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Phone <span className="text-status-blocked">*</span>
+          </label>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="volunteer@example.com"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+1 (555) 000-0000"
             className={inputClassName}
+            required={!isEdit}
           />
         </div>
         <div>
@@ -279,9 +312,10 @@ export default function VolunteersPage() {
         />
       ) : (
         <div className="bg-surface border border-border rounded-xl overflow-hidden">
-          <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto_auto] gap-4 px-5 py-3 border-b border-border text-[10px] font-semibold uppercase tracking-widest text-muted">
+          <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto_auto] gap-4 px-5 py-3 border-b border-border text-[10px] font-semibold uppercase tracking-widest text-muted">
             <span>Name</span>
             <span>Email</span>
+            <span>Phone</span>
             <span>Discord</span>
             <span>Role</span>
             <span>Events</span>
@@ -290,10 +324,11 @@ export default function VolunteersPage() {
           {volunteers.map((volunteer) => (
             <div
               key={volunteer.id}
-              className="grid grid-cols-[1fr_1fr_1fr_1fr_auto_auto] gap-4 items-center px-5 py-3 border-b border-border last:border-0 hover:bg-surface-hover transition-colors"
+              className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto_auto] gap-4 items-center px-5 py-3 border-b border-border last:border-0 hover:bg-surface-hover transition-colors"
             >
               <span className="text-sm font-medium truncate">{volunteer.name}</span>
               <span className="text-sm text-muted truncate">{volunteer.email ?? "—"}</span>
+              <span className="text-sm text-muted truncate">{volunteer.phone ?? "—"}</span>
               <span className="text-sm text-muted truncate">{volunteer.discordId ?? "—"}</span>
               <span className="text-sm text-muted truncate">{volunteer.role ?? "—"}</span>
               <div className="flex items-center gap-2">

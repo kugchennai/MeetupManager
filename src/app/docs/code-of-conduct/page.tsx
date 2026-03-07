@@ -35,17 +35,16 @@ export default function CodeOfConductPage() {
   const [logoLight, setLogoLight] = useState<string | null>(null);
   const [logoDark, setLogoDark] = useState<string | null>(null);
   const [codeOfConductContent, setCodeOfConductContent] = useState("");
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const handleChange = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    const root = document.documentElement;
+    setIsDark(root.classList.contains("dark"));
+    const observer = new MutationObserver(() => {
+      setIsDark(root.classList.contains("dark"));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -62,7 +61,7 @@ export default function CodeOfConductPage() {
       .catch(() => {});
   }, []);
 
-  const logo = isDark ? (logoDark || logoLight) : (logoLight || logoDark);
+  const logo = isDark ? (logoLight || logoDark) : (logoDark || logoLight);
   const content = (codeOfConductContent || DEFAULT_COC_CONTENT).trim();
   const safeHtml = sanitizeHtmlContent(content);
   const isSuperAdmin = session?.user?.globalRole === "SUPER_ADMIN";
