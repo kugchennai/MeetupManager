@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth-helpers";
-import { canUserAccessEvent, hasMinimumRole } from "@/lib/permissions";
+import { hasMinimumRole } from "@/lib/permissions";
 import { sendEmail } from "@/lib/email";
 import { logAudit } from "@/lib/audit";
 import type { GlobalRole } from "@/generated/prisma/enums";
@@ -65,16 +65,25 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = session.user.globalRole as GlobalRole;
-  if (!hasMinimumRole(userRole, "ADMIN")) {
-    return NextResponse.json(
-      { error: "Forbidden: ADMIN or SUPER_ADMIN required" },
-      { status: 403 }
-    );
+  // First, fetch the venue link and event to check permissions
+  const link = await prisma.eventVenuePartner.findUnique({
+    where: { id: linkId },
+    include: {
+      event: { select: { id: true, title: true, createdById: true } },
+      venuePartner: { select: { name: true, email: true } },
+    },
+  });
+
+  if (!link || link.eventId !== eventId) {
+    return NextResponse.json({ error: "Venue link not found" }, { status: 404 });
   }
 
-  const canEdit = await canUserAccessEvent(session.user.id, eventId, "update");
-  if (!canEdit) {
+  // Permission check: Allow only event creator or admins
+  const isEventCreator = link.event.createdById === session.user.id;
+  const userRole = session.user.globalRole as GlobalRole;
+  const isAdmin = hasMinimumRole(userRole, "ADMIN");
+
+  if (!isEventCreator && !isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -95,18 +104,6 @@ export async function POST(
       { error: `Invalid CC email: ${invalidCc}` },
       { status: 400 }
     );
-  }
-
-  const link = await prisma.eventVenuePartner.findUnique({
-    where: { id: linkId },
-    include: {
-      event: { select: { id: true, title: true } },
-      venuePartner: { select: { name: true, email: true } },
-    },
-  });
-
-  if (!link || link.eventId !== eventId) {
-    return NextResponse.json({ error: "Venue link not found" }, { status: 404 });
   }
 
   if (!link.venuePartner.email) {

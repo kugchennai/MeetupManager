@@ -1548,6 +1548,10 @@ export default function EventDetailPage() {
   // Only: 1) Super Admin (any event), or 2) Event creator if they are Admin/Super Admin
   const canDelete = event && (isSuperAdmin || (event.createdBy.id === session?.user?.id && (isAdmin || isSuperAdmin)));
 
+  // Check if user can send venue request emails
+  // Only: 1) Admin/Super Admin, or 2) Event creator
+  const canSendVenueRequest = event ? (isAdmin || event.createdBy.id === session?.user?.id) : false;
+
   const updateTask = async (
     checklistId: string,
     taskId: string,
@@ -2378,7 +2382,7 @@ export default function EventDetailPage() {
                 );
               }}
               canConfirmVenue={isAdmin}
-              canSendVenueRequest={isAdmin}
+              canSendVenueRequest={canSendVenueRequest}
               onUnlink={unlinkVenuePartner}
               onOpenVenueRequest={openVenueRequestComposer}
             />
