@@ -395,6 +395,47 @@ src/
 
 ---
 
+## AI Agent Integration
+
+Meetup Manager can be controlled programmatically by AI agents via its REST API. A comprehensive skill is available for agent frameworks (Kimi, Claude, etc.) that provides:
+
+- Complete API documentation for all endpoints
+- Authentication patterns for programmatic access
+- Role-based access control reference
+- Common workflow examples (create events, manage speakers, track tasks)
+- SDK helper patterns
+
+### Using the Skill
+
+**Install via Skills CLI:**
+```bash
+npx skills add kugchennai/MeetupManager@meetup-manager
+```
+
+**Or reference directly:**
+```
+github:kugchennai/MeetupManager/main/skills/meetup-manager
+```
+
+**Raw skill URL:**
+```
+https://raw.githubusercontent.com/kugchennai/MeetupManager/main/skills/meetup-manager/SKILL.md
+```
+
+### Quick Agent Setup
+
+1. **User pre-registers** by signing in via Google OAuth once (creates their account)
+2. **Agent obtains token:**
+   ```http
+   POST /api/auth/token
+   { "email": "user@example.com" }
+   ```
+3. **Agent uses Bearer token** for all subsequent API calls
+
+See the full skill documentation at [`skills/meetup-manager/SKILL.md`](skills/meetup-manager/SKILL.md) for detailed API reference and agent workflows.
+
+---
+
 ## Roadmap
 
 - **Agentic features** — AI-powered automation capabilities are in the pipeline

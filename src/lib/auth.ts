@@ -47,7 +47,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
   ],
-  session: { strategy: "jwt" },
+  session: { 
+    strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+  },
   callbacks: {
     async signIn({ user }) {
       const email = user.email?.toLowerCase();
