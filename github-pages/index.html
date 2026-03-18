@@ -14,6 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -38,7 +39,7 @@
 
       <div class="cta-row">
         <a class="btn btn-primary" href="https://github.com/kugchennai/AgenticEventManager" target="_blank" rel="noreferrer">View Source</a>
-        <a class="btn btn-sponsor" href="https://github.com/sponsors" target="_blank" rel="noreferrer">Sponsor &amp; Get Setup Help</a>
+        <button class="btn btn-sponsor setup-help-trigger" type="button">Sponsor &amp; Get Setup Help</button>
       </div>
 
       <p class="sponsor-note">
@@ -54,6 +55,20 @@
     </header>
 
     <main>
+      <section class="section container reveal">
+        <h2>Demo</h2>
+        <div class="demo-video-wrap">
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/RAYloEW9f28?rel=0&modestbranding=1"
+            title="Demo"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </section>
+
       <section class="section container reveal">
         <h2>Most meetup tools optimize for growth. Not quality.</h2>
         <div class="three-col">
@@ -224,7 +239,7 @@
             <li>Deployment setup on your free <strong>vercel.app</strong> URL</li>
             <li>Setup guidance + email support for deployment issues</li>
           </ul>
-          <a class="btn btn-sponsor" href="https://github.com/sponsors" target="_blank" rel="noreferrer">Sponsor &amp; Get Setup Help</a>
+          <button class="btn btn-sponsor setup-help-trigger" type="button">Sponsor &amp; Get Setup Help</button>
           <p class="fine-print">This covers setup time. Infrastructure stays on free tiers.</p>
         </article>
       </section>
@@ -247,6 +262,32 @@
       <a href="https://www.linkedin.com/company/kugchennai/" target="_blank" rel="noreferrer">LinkedIn</a>
       <p>Built with ❤️ by the KUG Chennai team.</p>
     </footer>
+
+    <dialog id="setupHelpDialog" class="setup-help-dialog">
+      <button id="setupHelpClose" class="dialog-close" type="button" aria-label="Close setup help dialog">
+        &times;
+      </button>
+      <h3>Setup Help</h3>
+      <p>
+        Sponsor first, then send us a quick email so we can help you get your deployment running.
+      </p>
+      <div class="dialog-actions">
+        <a
+          class="btn btn-primary"
+          href="https://opencollective.com/kugchennai"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Take me to sponsor page !
+        </a>
+        <a
+          class="btn btn-sponsor"
+          href="mailto:kugchennai@gmail.com?subject=MeetupManager%20Setup%20Help&body=Hi%20KUG%20Chennai%20team%2C%0A%0AI%20have%20completed%20the%20sponsorship%20for%20MeetupManager%20setup%20help.%20Could%20you%20please%20reach%20out%20to%20me%20with%20the%20next%20steps%20for%20deployment%3F%0A%0AThanks%21"
+        >
+          Compose Email
+        </a>
+      </div>
+    </dialog>
 
     <script src="./app.js"></script>
   </body>
