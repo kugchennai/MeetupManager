@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
+const isProductionDeployment = process.env.VERCEL_ENV === "production";
+
 const nextConfig: NextConfig = {
+  devIndicators: isProductionDeployment ? false : undefined,
   images: {
     remotePatterns: [
       {
