@@ -61,6 +61,43 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Production Deployment (Non-Vercel)
+
+Use a different flow from local development:
+
+```bash
+# 1) Install dependencies
+npm ci
+
+# 2) Generate Prisma client
+npx prisma generate
+
+# 3) Build production bundle
+npm run build
+
+# 4) Apply migrations ONCE (single runner/job)
+npx prisma migrate deploy
+
+# 5) Start production server
+npm run start
+```
+
+Important:
+
+- Do not run `npm run dev` in production.
+- Do not run `prisma migrate deploy` from every app pod/container startup.
+- Run seeding (`npx tsx prisma/seed.ts`) as a one-time controlled job only when needed.
+
+### Production Deployment (Vercel)
+
+Vercel uses `vercel.json` build settings. Your current setup runs:
+
+`npx prisma migrate deploy && npx prisma generate && next build`
+
+This works, but if you see occasional Prisma advisory lock timeouts during concurrent deploys, move migrations to a single release step and keep Vercel build as:
+
+`npx prisma generate && next build`
+
 ### Google Sign-In (OAuth) Setup
 
 This app uses NextAuth v5 with Google as the web sign-in provider.
