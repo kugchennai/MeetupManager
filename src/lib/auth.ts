@@ -2,51 +2,33 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { prisma, prismaUnfiltered } from "./prisma";
 
-// Validate required environment variables
-function validateEnv() {
-  const required = [
-    "AUTH_SECRET",
-    "AUTH_GOOGLE_ID",
-    "AUTH_GOOGLE_SECRET",
-    "SUPER_ADMIN_EMAIL",
-  ];
+const googleClientId = process.env.AUTH_GOOGLE_ID;
+const googleClientSecret = process.env.AUTH_GOOGLE_SECRET;
+const hasGoogleOAuthConfig = Boolean(googleClientId && googleClientSecret);
 
-  const missing = required.filter((key) => !process.env[key]);
-
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missing.join(", ")}\n` +
-      "Please check your .env file and ensure all required variables are set."
-    );
-  }
-
-  // Warn if CRON_SECRET is missing
-  if (!process.env.CRON_SECRET) {
-    console.warn(
-      "⚠️  CRON_SECRET is not set. Cron endpoints will not be accessible."
-    );
-  }
-
-  // Warn if SMTP is not configured
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn(
-      "⚠️  SMTP is not configured. Email notifications will be disabled. Set SMTP_HOST, SMTP_USER, SMTP_PASS in .env"
-    );
-  }
+if (googleClientId && !googleClientSecret) {
+  console.warn("AUTH_GOOGLE_ID is set but AUTH_GOOGLE_SECRET is missing. Google sign-in is disabled.");
 }
 
-// Run validation on module load
-validateEnv();
+if (!googleClientId && googleClientSecret) {
+  console.warn("AUTH_GOOGLE_SECRET is set but AUTH_GOOGLE_ID is missing. Google sign-in is disabled.");
+}
+
+if (!hasGoogleOAuthConfig) {
+  console.warn("Google OAuth env vars are missing. Google sign-in is disabled until AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET are set.");
+}
 
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL?.toLowerCase();
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-    }),
-  ],
+  providers: hasGoogleOAuthConfig
+    ? [
+      Google({
+        clientId: googleClientId,
+        clientSecret: googleClientSecret,
+      }),
+    ]
+    : [],
   session: { 
     strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
