@@ -37,6 +37,8 @@ cp .env.example .env
 # - DATABASE_URL (PostgreSQL connection string)
 # - AUTH_SECRET (run: openssl rand -base64 32)
 # - AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET (from Google Cloud Console)
+# - NEXT_PUBLIC_APP_URL (base app URL, e.g. http://localhost:3000)
+# - NEXTAUTH_URL (auth base URL; optional on Vercel, recommended for non-Vercel production)
 # - SUPER_ADMIN_EMAIL (your email for initial super admin)
 # - DISCORD_BOT_TOKEN (optional, for Discord notifications)
 # - CRON_SECRET (optional, for scheduled reminders)
@@ -76,7 +78,14 @@ This app uses NextAuth v5 with Google as the web sign-in provider.
    - `AUTH_GOOGLE_SECRET`
 6. Ensure these are also set:
    - `AUTH_SECRET`
+   - `NEXT_PUBLIC_APP_URL`
+   - `NEXTAUTH_URL`
    - `SUPER_ADMIN_EMAIL`
+
+`NEXTAUTH_URL` note:
+
+- On Vercel, auth URL inference usually works even if this is not set.
+- On non-Vercel production, set this explicitly to your public domain (for example `https://kugmanager.mycompany.com`) to avoid callback/redirect issues.
 
 ---
 
