@@ -1,7 +1,7 @@
 "use client";
 
-import { PageHeader, Button, DateTimePicker } from "@/components/design-system";
-import { ArrowLeft, MapPin, FileText, ClipboardCheck, Link2 } from "lucide-react";
+import { PageHeader, Button, DateTimePicker, Modal } from "@/components/design-system";
+import { AlertTriangle, ArrowLeft, MapPin, FileText, ClipboardCheck, Link2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -23,7 +23,7 @@ export default function CreateEventPage() {
   const userRole = session?.user?.globalRole ?? "";
   const hasAccess = (ROLE_LEVEL[userRole] ?? 0) >= ROLE_LEVEL.EVENT_LEAD;
 
-  const { globalTimezone } = useAppSettings();
+  const { globalTimezone, minEventDuration } = useAppSettings();
 
   useEffect(() => {
     if (status === "loading") return;
@@ -33,6 +33,7 @@ export default function CreateEventPage() {
   const [submitting, setSubmitting] = useState(false);
   const [templates, setTemplates] = useState<SOPTemplate[]>([]);
   const [dateValidationError, setDateValidationError] = useState<string | null>(null);
+  const [errorPopup, setErrorPopup] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -50,20 +51,32 @@ export default function CreateEventPage() {
       .catch(() => { });
   }, []);
 
+  const showError = (message: string) => {
+    setDateValidationError(message);
+    setErrorPopup(message);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate that end date is after start date
     if (form.date && form.endDate) {
       const startDate = new Date(form.date);
       const endDate = new Date(form.endDate);
       if (endDate <= startDate) {
-        setDateValidationError("End time must be greater than start time");
+        showError("End time must be greater than start time");
+        return;
+      }
+      const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+      if (durationHours < minEventDuration) {
+        showError(
+          `Event duration must be at least ${minEventDuration} hours. Current duration: ${durationHours.toFixed(1)} hours.`
+        );
         return;
       }
     }
 
     setDateValidationError(null);
+    setErrorPopup(null);
     setSubmitting(true);
 
     try {
@@ -76,7 +89,11 @@ export default function CreateEventPage() {
       if (res.ok) {
         const event = await res.json();
         router.push(`/events/${event.id}`);
+        return;
       }
+
+      const data = await res.json().catch(() => ({}));
+      showError(typeof data.error === "string" ? data.error : "Failed to create event");
     } finally {
       setSubmitting(false);
     }
@@ -252,6 +269,23 @@ export default function CreateEventPage() {
           </Link>
         </div>
       </form>
+
+      <Modal open={!!errorPopup} onClose={() => setErrorPopup(null)} className="p-6 max-w-sm">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="h-10 w-10 rounded-full bg-status-blocked/15 flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-5 w-5 text-status-blocked" />
+          </div>
+          <h2 className="text-lg font-semibold font-[family-name:var(--font-display)]">
+            Couldn&apos;t create event
+          </h2>
+        </div>
+        <p className="text-sm text-muted mb-4">{errorPopup}</p>
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => setErrorPopup(null)}>
+            Got it
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
