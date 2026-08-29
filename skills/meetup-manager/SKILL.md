@@ -1,9 +1,4 @@
 ---
-description: Complete API and MCP reference for Meetup Manager. Use this skill to create and manage events, SOP checklists, speakers, volunteers, venues, and members via the MCP server at /api/mcp or REST API. Use when the user wants to install Meetup Manager MCP, assign SOP tasks, send venue or speaker emails, or operate the dashboard from chat.
-alwaysApply: false
----
-
----
 name: meetup-manager
 description: Manage community meetups via Meetup Manager MCP and REST API. Use when installing the Meetup Manager skill or MCP, creating events, updating SOP checklists, assigning tasks, listing overdue work, or sending team emails from an agent.
 ---
