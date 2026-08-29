@@ -16,6 +16,7 @@ A full-stack app for organizing community meetups. Manage events, speakers, volu
 | Testing | Playwright (E2E) |
 | Deployment | Vercel (with Cron Jobs) |
 | Notifications | Discord Bot API + Email (SMTP/Gmail) |
+| MCP | Streamable HTTP at `/api/mcp` (`mcp-handler`) |
 
 ## Getting Started
 
@@ -405,6 +406,7 @@ src/
 │   │   ├── settings/     # App settings CRUD + logo endpoint
 │   │   ├── discord/      # Discord config + test
 │   │   ├── email/        # Email test (12 templates) + log endpoints
+│   │   ├── mcp/          # MCP Streamable HTTP endpoint
 │   │   └── cron/         # Scheduled reminder + email jobs
 │   ├── dashboard/        # Dashboard page
 │   ├── events/           # Event list + detail + new event pages
@@ -424,6 +426,9 @@ src/
 ├── lib/
 │   ├── auth.ts           # NextAuth config + callbacks
 │   ├── auth-helpers.ts   # Dual auth session resolver
+│   ├── mcp/              # MCP tools, auth, and JSON helpers
+│   ├── events/           # Shared event create logic
+│   ├── tasks/            # Shared SOP task update logic
 │   ├── permissions.ts    # Role hierarchy + access checks
 │   ├── audit.ts          # Audit logging + diff utility
 │   ├── discord.ts        # Discord bot message helpers
@@ -443,7 +448,47 @@ src/
 
 ## AI Agent Integration
 
-Meetup Manager can be controlled programmatically by AI agents via its REST API. A comprehensive skill is available for agent frameworks (Kimi, Claude, etc.) that provides:
+Meetup Manager can be controlled by AI agents through **MCP** (recommended for Cursor, Claude, and other MCP clients) or the REST API.
+
+### MCP server
+
+[Browse meetup-manager on skills.sh](https://skills.sh/kugchennai/MeetupManager/meetup-manager)
+
+Authenticated Streamable HTTP endpoint: **`/api/mcp`**
+
+The home page has **Install MCP for agents** with a **Copy prompt** button that installs both the [skills.sh skill](https://skills.sh/kugchennai/MeetupManager/meetup-manager) and this MCP server.
+
+```bash
+npx skills add kugchennai/MeetupManager@meetup-manager -g -y
+```
+
+1. Sign in once via Google (or obtain a token from `POST /api/auth/token`).
+2. Send `Authorization: Bearer <accessToken>` on MCP requests.
+
+**Cursor / Claude example** (`mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "meetup-manager": {
+      "url": "https://your-domain.com/api/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+      }
+    }
+  }
+}
+```
+
+Local: `http://localhost:3000/api/mcp`.
+
+Critical tools include creating events, reading/updating SOP checklists, assigning tasks (to yourself or teammates), listing overdue work, members, speakers, venue partners, and triggering emails (venue request, speaker invitation, event-created, task-assigned).
+
+Protected resource metadata: `GET /.well-known/oauth-protected-resource`.
+
+### REST API skill
+
+A comprehensive skill is available for agent frameworks that use HTTP directly:
 
 - Complete API documentation for all endpoints
 - Authentication patterns for programmatic access
@@ -453,9 +498,9 @@ Meetup Manager can be controlled programmatically by AI agents via its REST API.
 
 ### Using the Skill
 
-**Install via Skills CLI:**
+**Install via Skills CLI / [skills.sh](https://skills.sh/kugchennai/MeetupManager/meetup-manager):**
 ```bash
-npx skills add kugchennai/MeetupManager@meetup-manager
+npx skills add kugchennai/MeetupManager@meetup-manager -g -y
 ```
 
 **Or reference directly:**
@@ -484,7 +529,7 @@ See the full skill documentation at [`skills/meetup-manager/SKILL.md`](skills/me
 
 ## Roadmap
 
-- **Agentic features** — AI-powered automation capabilities are in the pipeline
+- **Agentic features** — MCP server for in-chat event, SOP, and email workflows (see `/api/mcp`)
 
 ---
 

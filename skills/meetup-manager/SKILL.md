@@ -1,16 +1,94 @@
 ---
-description: Complete API reference for interacting with Meetup Manager programmatically. Use this skill to create, manage, and query events, speakers, volunteers, venues, SOP checklists, and members via REST API endpoints without using the dashboard UI.
+description: Complete API and MCP reference for Meetup Manager. Use this skill to create and manage events, SOP checklists, speakers, volunteers, venues, and members via the MCP server at /api/mcp or REST API. Use when the user wants to install Meetup Manager MCP, assign SOP tasks, send venue or speaker emails, or operate the dashboard from chat.
 alwaysApply: false
 ---
 
 ---
 name: meetup-manager
-description: Complete API reference for interacting with Meetup Manager programmatically. Enables AI agents to manage events, speakers, volunteers, venues, SOP checklists, and members via REST API endpoints.
+description: Manage community meetups via Meetup Manager MCP and REST API. Use when installing the Meetup Manager skill or MCP, creating events, updating SOP checklists, assigning tasks, listing overdue work, or sending team emails from an agent.
 ---
 
-# Meetup Manager API Skill
+# Meetup Manager skill + MCP
 
-This skill provides complete documentation for interacting with Meetup Manager via its REST API. Use this to programmatically manage community meetups, events, speakers, volunteers, and all related operations.
+Install from [skills.sh](https://skills.sh/kugchennai/MeetupManager/meetup-manager):
+
+```bash
+npx skills add kugchennai/MeetupManager@meetup-manager -g -y
+```
+
+Then connect the remote MCP server (Streamable HTTP) at `{APP_ORIGIN}/api/mcp` with `Authorization: Bearer {accessToken}`.
+
+## Copy this prompt into your agent
+
+Replace `APP_ORIGIN` with the Meetup Manager URL (for example `https://your-domain.com` or `http://localhost:3000`).
+
+```
+Install Meetup Manager for this agent: the skills.sh skill AND the remote MCP server.
+
+1) Install the skill globally (skills.sh / Skills CLI):
+npx skills add kugchennai/MeetupManager@meetup-manager -g -y
+
+Skill page: https://skills.sh/kugchennai/MeetupManager/meetup-manager
+
+2) Connect the MCP server (Streamable HTTP):
+- URL: APP_ORIGIN/api/mcp
+- Header: Authorization: Bearer <ACCESS_TOKEN>
+
+Cursor / Claude Desktop mcp.json:
+
+{
+  "mcpServers": {
+    "meetup-manager": {
+      "url": "APP_ORIGIN/api/mcp",
+      "headers": { "Authorization": "Bearer YOUR_ACCESS_TOKEN" }
+    }
+  }
+}
+
+3) Get an access token after the user has signed in once at APP_ORIGIN:
+POST APP_ORIGIN/api/auth/token
+Content-Type: application/json
+
+{ "email": "<user's Meetup Manager email>" }
+
+Never invent a token. If you do not have one, ask the user to paste their access token.
+
+4) Verify with the MCP tool whoami, then you can create events, read/update SOP checklists, assign tasks, list overdue items, list members/speakers/venues, and send emails.
+
+Prefer MCP tools over raw REST when both are available.
+```
+
+## MCP server (recommended for chat agents)
+
+Meetup Manager exposes an authenticated [MCP](https://modelcontextprotocol.io) endpoint:
+
+```
+https://your-domain.com/api/mcp
+http://localhost:3000/api/mcp
+```
+
+Use Streamable HTTP with the same Bearer token as the REST API:
+
+```http
+Authorization: Bearer {accessToken}
+```
+
+Connect from Cursor/Claude with:
+
+```json
+{
+  "mcpServers": {
+    "meetup-manager": {
+      "url": "https://your-domain.com/api/mcp",
+      "headers": { "Authorization": "Bearer YOUR_ACCESS_TOKEN" }
+    }
+  }
+}
+```
+
+Core tools: `create_event`, `list_events`, `get_event`, `list_sop_templates`, `list_sop_checklists`, `get_sop_checklist`, `update_sop_task`, `assign_task`, `create_sop_task`, `list_my_tasks`, `list_overdue_tasks`, `list_members`, `list_speakers`, `get_speaker`, `list_venues`, `get_venue`, `list_volunteers`, `send_venue_request_email`, `send_speaker_invitation`, `send_event_created_email`, `send_task_assigned_email`, `whoami`.
+
+Prefer MCP tools over raw REST when both are available. REST documentation below remains valid.
 
 ## Base URL
 
