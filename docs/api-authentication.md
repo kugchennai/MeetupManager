@@ -4,7 +4,9 @@
 
 The Event Manager API supports two authentication methods:
 1. **Cookie-based authentication** (for web applications)
-2. **Bearer token authentication** (for mobile apps and third-party integrations)
+2. **Bearer token authentication** (for mobile apps, MCP clients, and third-party integrations)
+
+MCP (Model Context Protocol) uses the same Bearer token at `POST /api/mcp`. See the README MCP section.
 
 ## Authentication Flow
 

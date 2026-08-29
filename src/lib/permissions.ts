@@ -26,6 +26,34 @@ export function hasMinimumEventRole(userRole: EventRole, requiredRole: EventRole
   return (EVENT_ROLE_HIERARCHY[userRole] ?? 0) >= (EVENT_ROLE_HIERARCHY[requiredRole] ?? 0);
 }
 
+/**
+ * Volunteer-scoped event IDs, or `null` when the user can see all events.
+ */
+export async function getAssignedEventIds(
+  userId: string,
+  userRole: GlobalRole
+): Promise<string[] | null> {
+  if (userRole !== "VOLUNTEER") return null;
+
+  const [volunteerLinks, memberLinks] = await Promise.all([
+    prisma.eventVolunteer.findMany({
+      where: { volunteer: { userId } },
+      select: { eventId: true },
+    }),
+    prisma.eventMember.findMany({
+      where: { userId },
+      select: { eventId: true },
+    }),
+  ]);
+
+  return [
+    ...new Set([
+      ...volunteerLinks.map((v) => v.eventId),
+      ...memberLinks.map((m) => m.eventId),
+    ]),
+  ];
+}
+
 export async function canUserAccessEvent(
   userId: string,
   eventId: string,

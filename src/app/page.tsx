@@ -3,8 +3,9 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
-import { Zap } from "lucide-react";
+import { Plug, Zap } from "lucide-react";
 import { Button } from "@/components/design-system";
+import { McpInstallModal } from "@/components/mcp-install-modal";
 import Image from "next/image";
 
 interface PublicSettings {
@@ -23,6 +24,7 @@ function LoginContent() {
     logoDark: null,
   });
   const [isDark, setIsDark] = useState(true);
+  const [mcpOpen, setMcpOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings/public")
@@ -127,12 +129,25 @@ function LoginContent() {
             </svg>
             {loading ? "Redirecting…" : "Sign in with Google"}
           </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            className="w-full"
+            onClick={() => setMcpOpen(true)}
+          >
+            <Plug className="h-4 w-4" />
+            Install MCP for agents
+          </Button>
         </div>
 
         <p className="text-center text-[11px] text-muted mt-6">
           By signing in, you agree to help organize amazing meetups.
         </p>
       </div>
+
+      <McpInstallModal open={mcpOpen} onClose={() => setMcpOpen(false)} />
     </div>
   );
 }

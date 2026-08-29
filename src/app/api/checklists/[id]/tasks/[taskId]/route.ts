@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth-helpers";
 import { canUserAccessEvent } from "@/lib/permissions";
-import { logAudit, diffChanges } from "@/lib/audit";
-import { sendTaskAssignedEmail } from "@/lib/emails/triggers";
-
-const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
-const STATUSES = ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"] as const;
+import { logAudit } from "@/lib/audit";
+import { updateSopTask } from "@/lib/tasks/update-task";
 
 export async function PATCH(
   req: NextRequest,
@@ -18,171 +15,14 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const checklist = await prisma.sOPChecklist.findUnique({
-    where: { id: checklistId },
-    select: { id: true, eventId: true },
-  });
-
-  if (!checklist) {
-    return NextResponse.json({ error: "Checklist not found" }, { status: 404 });
-  }
-
-  const canEdit = await canUserAccessEvent(session.user.id, checklist.eventId, "update");
-
-  // Volunteers can't fully edit, but may self-assign and toggle status
-  let volunteerSelfOnly = false;
-  let userVolunteerId: string | null = null;
-
-  if (!canEdit) {
-    const volunteerLink = await prisma.eventVolunteer.findFirst({
-      where: { eventId: checklist.eventId, volunteer: { userId: session.user.id } },
-      select: { volunteerId: true },
-    });
-
-    if (!volunteerLink) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    volunteerSelfOnly = true;
-    userVolunteerId = volunteerLink.volunteerId;
-  }
-
-  const before = await prisma.sOPTask.findFirst({
-    where: { id: taskId, checklistId },
-  });
-
-  if (!before) {
-    return NextResponse.json({ error: "Task not found" }, { status: 404 });
-  }
-
   const body = await req.json();
-  const { status, priority, deadline, ownerId, assigneeId, volunteerAssigneeId, blockedReason, title } = body;
+  const result = await updateSopTask(session.user, checklistId, taskId, body);
 
-  const updateData: {
-    status?: (typeof STATUSES)[number];
-    priority?: (typeof PRIORITIES)[number];
-    deadline?: Date | null;
-    ownerId?: string | null;
-    assigneeId?: string | null;
-    volunteerAssigneeId?: string | null;
-    blockedReason?: string | null;
-    title?: string;
-    completedAt?: Date | null;
-  } = {};
-
-  if (volunteerSelfOnly) {
-    // Volunteers: only toggle status and self-assign/unassign
-    if (status !== undefined && STATUSES.includes(status)) {
-      updateData.status = status;
-      if (status === "DONE") updateData.completedAt = new Date();
-      else if (before.status === "DONE") updateData.completedAt = null;
-    }
-
-    if (volunteerAssigneeId !== undefined) {
-      if (volunteerAssigneeId === userVolunteerId) {
-        updateData.volunteerAssigneeId = volunteerAssigneeId;
-        updateData.assigneeId = null;
-      } else if (!volunteerAssigneeId && before.volunteerAssigneeId === userVolunteerId) {
-        updateData.volunteerAssigneeId = null;
-      }
-    }
-  } else {
-    // Full edit for EVENT_LEAD+
-    if (status !== undefined) {
-      if (STATUSES.includes(status)) {
-        updateData.status = status;
-        if (status === "DONE") {
-          updateData.completedAt = new Date();
-        } else if (before.status === "DONE") {
-          updateData.completedAt = null;
-        }
-      }
-    }
-
-    if (priority !== undefined && PRIORITIES.includes(priority)) {
-      updateData.priority = priority;
-    }
-
-    if (deadline !== undefined) {
-      updateData.deadline = deadline ? new Date(deadline) : null;
-    }
-
-    if (ownerId !== undefined) {
-      updateData.ownerId = ownerId || null;
-    }
-
-    if (assigneeId !== undefined) {
-      updateData.assigneeId = assigneeId || null;
-      if (assigneeId) updateData.volunteerAssigneeId = null;
-    }
-
-    if (volunteerAssigneeId !== undefined) {
-      updateData.volunteerAssigneeId = volunteerAssigneeId || null;
-      if (volunteerAssigneeId) updateData.assigneeId = null;
-    }
-
-    if (blockedReason !== undefined) {
-      updateData.blockedReason = typeof blockedReason === "string" ? blockedReason.trim() || null : null;
-    }
-
-    if (title !== undefined && typeof title === "string" && title.trim()) {
-      updateData.title = title.trim();
-    }
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  const task = await prisma.sOPTask.update({
-    where: { id: taskId },
-    data: updateData,
-    include: {
-      owner: { select: { id: true, name: true, image: true } },
-      assignee: { select: { id: true, name: true, image: true } },
-      volunteerAssignee: { select: { id: true, name: true } },
-    },
-  });
-
-  const beforeRecord = {
-    status: before.status,
-    priority: before.priority,
-    deadline: before.deadline,
-    ownerId: before.ownerId,
-    assigneeId: before.assigneeId,
-    volunteerAssigneeId: before.volunteerAssigneeId,
-    blockedReason: before.blockedReason,
-    title: before.title,
-  };
-
-  const afterRecord = {
-    status: task.status,
-    priority: task.priority,
-    deadline: task.deadline,
-    ownerId: task.ownerId,
-    assigneeId: task.assigneeId,
-    volunteerAssigneeId: task.volunteerAssigneeId,
-    blockedReason: task.blockedReason,
-    title: task.title,
-  };
-
-  const changes = diffChanges(beforeRecord, afterRecord);
-
-  if (Object.keys(changes).length > 0) {
-    await logAudit({
-      userId: session.user.id,
-      action: "UPDATE",
-      entityType: "SOPTask",
-      entityId: taskId,
-      entityName: task.title,
-      changes,
-    });
-  }
-
-  // Send task assigned email when assignee changes (awaited for serverless compatibility)
-  const assigneeChanged = before.assigneeId !== task.assigneeId && task.assigneeId;
-  const volunteerAssigneeChanged = before.volunteerAssigneeId !== task.volunteerAssigneeId && task.volunteerAssigneeId;
-  if (assigneeChanged || volunteerAssigneeChanged) {
-    await sendTaskAssignedEmail(taskId, session.user.name ?? undefined);
-  }
-
-  return NextResponse.json(task);
+  return NextResponse.json(result.task);
 }
 
 export async function DELETE(
